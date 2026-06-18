@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',
+        pathname: '/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

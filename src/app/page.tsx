@@ -1,5 +1,10 @@
-import LoginScreen from "@/components/LoginScreen";
+import { Suspense } from 'react';
+import AuthScreen from '@/components/AuthScreen';
 
 export default function Home() {
-  return <LoginScreen />;
+  return (
+    <Suspense fallback={null}>
+      <AuthScreen />
+    </Suspense>
+  );
 }
