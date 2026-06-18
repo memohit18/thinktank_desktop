@@ -21,6 +21,7 @@ export type ProblemListParams = {
   search?: string;
   page?: number;
   limit?: number;
+  useActiveRoadmap?: boolean;
 };
 
 export type QuestionFiltersResponse = {
@@ -46,6 +47,10 @@ export function buildProblemsQueryString(params: ProblemListParams = {}) {
   if (params.search) searchParams.set('search', params.search);
   searchParams.set('page', String(params.page ?? 1));
   searchParams.set('limit', String(params.limit ?? 20));
+  searchParams.set(
+    'useActiveRoadmap',
+    String(params.useActiveRoadmap ?? true),
+  );
 
   return searchParams.toString();
 }

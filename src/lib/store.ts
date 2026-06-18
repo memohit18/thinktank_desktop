@@ -6,6 +6,7 @@ import './services/codeApi';
 import './services/problemsApi';
 import './services/profileApi';
 import './services/userProgressApi';
+import './services/roadmapsApi';
 
 export const store = configureStore({
   reducer: {

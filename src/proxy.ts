@@ -65,6 +65,7 @@ export const config = {
     '/api/questions/:path*',
     '/api/profile',
     '/api/user-progress/:path*',
+    '/api/roadmaps/:path*',
     '/api/code/:path*',
   ],
 };

@@ -14,6 +14,7 @@ import {
 } from '@/lib/services/userProgressApi';
 import BulkUploadModal from '@/components/code/BulkUploadModal';
 import ProgressOverview from '@/components/code/ProgressOverview';
+import RoadmapModal from '@/components/code/RoadmapModal';
 import DataTable, { type DataTableColumn } from '@/components/ui/DataTable';
 import Pagination from '@/components/ui/Pagination';
 import Select from '@/components/ui/Select';
@@ -43,6 +44,7 @@ export default function CodingChallengesPage() {
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showRoadmapModal, setShowRoadmapModal] = useState(false);
   const [progressStatus, setProgressStatus] = useState('all');
 
   const usesProgressList = ['Attempted', 'Solved', 'Revised', 'Mastered'].includes(
@@ -273,16 +275,25 @@ export default function CodingChallengesPage() {
       </div>
 
       <div className="mb-4 space-y-3">
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setPage(1);
-          }}
-          placeholder="Filter by title, number, or pattern..."
-          className="w-full max-w-md rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent"
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setPage(1);
+            }}
+            placeholder="Filter by title, number, or pattern..."
+            className="w-full max-w-md rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent"
+          />
+          <button
+            type="button"
+            onClick={() => setShowRoadmapModal(true)}
+            className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            Update Roadmap
+          </button>
+        </div>
 
         {showFilters ? (
           <div className="space-y-4 rounded-2xl border border-border bg-card p-4">
@@ -377,6 +388,7 @@ export default function CodingChallengesPage() {
       </DataTable>
 
       <BulkUploadModal open={showBulkUpload} onClose={() => setShowBulkUpload(false)} />
+      <RoadmapModal open={showRoadmapModal} onClose={() => setShowRoadmapModal(false)} />
     </div>
   );
 }
