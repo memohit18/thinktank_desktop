@@ -5,12 +5,16 @@ import {
   type FetchArgs,
   type FetchBaseQueryError,
 } from '@reduxjs/toolkit/query/react';
-import { getAccessToken } from '@/lib/auth/cookies';
+import {
+  getValidAccessToken,
+  refreshAccessToken,
+  shouldAttemptTokenRefresh,
+} from '@/lib/auth/refreshToken';
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: '/api',
-  prepareHeaders: (headers) => {
-    const accessToken = getAccessToken();
+  prepareHeaders: async (headers) => {
+    const accessToken = await getValidAccessToken();
 
     if (accessToken) {
       headers.set('Authorization', `Bearer ${accessToken}`);
@@ -20,12 +24,30 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
+function getRequestUrl(args: string | FetchArgs) {
+  return typeof args === 'string' ? args : args.url;
+}
+
 const baseQuery: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
-  return rawBaseQuery(args, api, extraOptions);
+  let result = await rawBaseQuery(args, api, extraOptions);
+  const requestUrl = getRequestUrl(args);
+
+  if (
+    result.error &&
+    shouldAttemptTokenRefresh(result.error.status, requestUrl)
+  ) {
+    const newAccessToken = await refreshAccessToken();
+
+    if (newAccessToken) {
+      result = await rawBaseQuery(args, api, extraOptions);
+    }
+  }
+
+  return result;
 };
 
 export const apiSlice = createApi({

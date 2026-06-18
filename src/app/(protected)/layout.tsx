@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AppHeader from '@/components/layout/AppHeader';
 import AppSidebar from '@/components/layout/AppSidebar';
-import { getAccessToken } from '@/lib/auth/cookies';
-import { isAccessTokenValid } from '@/lib/auth/token';
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function ProtectedLayout({
   children,
@@ -13,20 +12,15 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    const accessToken = getAccessToken();
-
-    if (!isAccessTokenValid(accessToken)) {
+    if (!isLoading && !isAuthenticated) {
       router.replace('/');
-      return;
     }
+  }, [isAuthenticated, isLoading, router]);
 
-    setIsAuthorized(true);
-  }, [router]);
-
-  if (!isAuthorized) {
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         Checking session...

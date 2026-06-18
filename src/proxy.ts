@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import {
   getRequestAccessToken,
+  getRequestRefreshToken,
+  hasValidSession,
   isAuthRoute,
   isProtectedRoute,
 } from '@/lib/auth/routeGuard';
-import { isAccessTokenValid } from '@/lib/auth/token';
 import { resolveProxyTarget } from '@/lib/proxy/config';
 
 export function proxy(request: NextRequest) {
@@ -31,27 +32,22 @@ export function proxy(request: NextRequest) {
   }
 
   const accessToken = getRequestAccessToken(request);
-  const isAuthenticated = isAccessTokenValid(accessToken);
+  const refreshToken = getRequestRefreshToken(request);
+  const hasSession = hasValidSession(request);
 
-  if (isProtectedRoute(pathname) && !isAuthenticated) {
+  if (isProtectedRoute(pathname) && !hasSession) {
     const loginUrl = new URL('/', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (isAuthRoute(pathname) && isAuthenticated) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  if (
-    accessToken &&
-    !isAuthenticated &&
-    (isProtectedRoute(pathname) || isAuthRoute(pathname))
-  ) {
-    const response = NextResponse.redirect(new URL('/', request.url));
-    response.cookies.delete('accessToken');
-    response.cookies.delete('refreshToken');
+    const response = NextResponse.redirect(loginUrl);
+    if (accessToken || refreshToken) {
+      response.cookies.delete('accessToken');
+      response.cookies.delete('refreshToken');
+    }
     return response;
+  }
+
+  if (isAuthRoute(pathname) && hasSession) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();

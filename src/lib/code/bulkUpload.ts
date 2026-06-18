@@ -15,6 +15,7 @@ export type BulkUploadQuestion = {
   expectedTimeComplexity: string;
   expectedSpaceComplexity: string;
   tags: string[];
+  outputType?: string;
   examples?: BulkUploadExample[];
   hints?: string[];
   followUps?: string[];
@@ -23,9 +24,11 @@ export type BulkUploadQuestion = {
 export type BulkUploadTestcase = {
   questionId: number;
   input: Record<string, unknown>;
-  expectedOutput: unknown;
-  isSample: boolean;
-  isHidden: boolean;
+  expectedOutput?: unknown;
+  expectedOutputCount?: number;
+  validationType?: 'exact' | 'count_only';
+  isSample?: boolean;
+  isHidden?: boolean;
 };
 
 export type BulkUploadPayload = {
@@ -51,50 +54,49 @@ export type BulkUploadResponse = {
 export const BULK_UPLOAD_EXAMPLE: BulkUploadPayload = {
   questions: [
     {
-      questionId: 3,
-      title: 'Valid Anagram',
-      category: 'Arrays & Hashing',
-      pattern: 'Frequency Count',
-      difficulty: 'Easy',
+      questionId: 36,
+      title: 'Evaluate Reverse Polish Notation',
+      category: 'Stack',
+      pattern: 'Stack',
+      difficulty: 'Medium',
       problemStatement:
-        'Given two strings s and t, return true if t is an anagram of s.',
-      constraints: [
-        '1 <= s.length <= 50000',
-        's and t consist of lowercase English letters',
-      ],
+        'Evaluate the value of an arithmetic expression in Reverse Polish Notation.',
+      constraints: ['1 <= tokens.length <= 10^4'],
       expectedTimeComplexity: 'O(n)',
-      expectedSpaceComplexity: 'O(1)',
-      tags: ['string', 'hashmap'],
+      expectedSpaceComplexity: 'O(n)',
+      tags: ['stack', 'array', 'math'],
+      outputType: 'exact',
       examples: [
         {
-          input: { s: 'anagram', t: 'nagaram' },
-          output: true,
-          explanation: 'Both strings contain the same character frequencies.',
+          input: { tokens: ['2', '1', '+', '3', '*'] },
+          output: 9,
         },
       ],
-      hints: [
-        'Count character frequencies.',
-        'Compare both frequency maps.',
-      ],
-      followUps: [
-        'Can you solve without sorting?',
-        'What if unicode characters are allowed?',
-      ],
+      hints: ['Use a stack to process operands.'],
+      followUps: ['What if operators have different precedence?'],
     },
   ],
   testcases: [
     {
-      questionId: 3,
-      input: { s: 'anagram', t: 'nagaram' },
-      expectedOutput: true,
+      questionId: 36,
+      input: { tokens: ['2', '1', '+', '3', '*'] },
+      expectedOutput: 9,
       isSample: true,
       isHidden: false,
     },
     {
-      questionId: 3,
-      input: { s: 'rat', t: 'car' },
-      expectedOutput: false,
-      isSample: false,
+      questionId: 36,
+      input: { tokens: ['4', '13', '5', '/', '+'] },
+      expectedOutput: 6,
+      isSample: true,
+      isHidden: false,
+    },
+    {
+      questionId: 36,
+      input: {
+        tokens: ['10', '6', '9', '3', '+', '-11', '*', '/', '*', '17', '+', '5', '+'],
+      },
+      expectedOutput: 22,
       isHidden: true,
     },
   ],
@@ -110,6 +112,27 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function isStringArray(value: unknown) {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function normalizeTestcase(testcase: BulkUploadTestcase): BulkUploadTestcase {
+  const isHidden = testcase.isHidden ?? false;
+  const isSample = testcase.isSample ?? !isHidden;
+
+  return {
+    ...testcase,
+    isHidden,
+    isSample,
+    validationType: testcase.validationType ?? 'exact',
+  };
+}
+
+export function normalizeBulkUploadPayload(
+  payload: BulkUploadPayload,
+): BulkUploadPayload {
+  return {
+    questions: payload.questions,
+    testcases: payload.testcases?.map((testcase) => normalizeTestcase(testcase)),
+  };
 }
 
 function validateQuestion(question: unknown, index: number, errors: string[]) {
@@ -144,6 +167,13 @@ function validateQuestion(question: unknown, index: number, errors: string[]) {
 
   if (!isStringArray(question.tags)) {
     errors.push(`questions[${index}].tags must be an array of strings.`);
+  }
+
+  if (
+    question.outputType !== undefined &&
+    (typeof question.outputType !== 'string' || !question.outputType)
+  ) {
+    errors.push(`questions[${index}].outputType must be a non-empty string.`);
   }
 
   if (question.examples !== undefined) {
@@ -194,16 +224,39 @@ function validateTestcase(testcase: unknown, index: number, errors: string[]) {
     errors.push(`testcases[${index}].input must be an object.`);
   }
 
-  if (testcase.expectedOutput === undefined) {
+  const validationType = testcase.validationType ?? 'exact';
+
+  if (
+    validationType !== 'exact' &&
+    validationType !== 'count_only'
+  ) {
+    errors.push(
+      `testcases[${index}].validationType must be "exact" or "count_only".`,
+    );
+  }
+
+  if (validationType === 'count_only') {
+    if (typeof testcase.expectedOutputCount !== 'number') {
+      errors.push(
+        `testcases[${index}].expectedOutputCount is required for count_only validation.`,
+      );
+    }
+  } else if (testcase.expectedOutput === undefined) {
     errors.push(`testcases[${index}].expectedOutput is required.`);
   }
 
-  if (typeof testcase.isSample !== 'boolean') {
-    errors.push(`testcases[${index}].isSample must be a boolean.`);
+  if (
+    testcase.isSample !== undefined &&
+    typeof testcase.isSample !== 'boolean'
+  ) {
+    errors.push(`testcases[${index}].isSample must be a boolean when provided.`);
   }
 
-  if (typeof testcase.isHidden !== 'boolean') {
-    errors.push(`testcases[${index}].isHidden must be a boolean.`);
+  if (
+    testcase.isHidden !== undefined &&
+    typeof testcase.isHidden !== 'boolean'
+  ) {
+    errors.push(`testcases[${index}].isHidden must be a boolean when provided.`);
   }
 }
 
@@ -242,7 +295,9 @@ export function validateBulkUploadPayload(data: unknown) {
     return { valid: false as const, errors };
   }
 
-  return { valid: true as const, payload: data as BulkUploadPayload };
+  const payload = normalizeBulkUploadPayload(data as BulkUploadPayload);
+
+  return { valid: true as const, payload };
 }
 
 export function formatBulkUploadResult(result: BulkUploadResponse) {

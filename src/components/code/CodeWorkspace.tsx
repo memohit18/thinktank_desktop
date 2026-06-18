@@ -15,6 +15,7 @@ import {
   preloadPyodide,
   type ExecutionResult,
 } from '@/lib/code/runPython';
+import { formatExpectedTestOutput } from '@/lib/code/testCaseComparison';
 import type { CodeQuestion } from '@/lib/code/questions';
 import { mapExecutionToSubmission } from '@/lib/code/submissionMapper';
 import { getApiErrorMessage } from '@/lib/services/getApiErrorMessage';
@@ -116,7 +117,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
         testResults: question.testCases.map((testCase) => ({
           id: testCase.id,
           passed: false,
-          expected: testCase.expectedOutput,
+          expected: formatExpectedTestOutput(testCase),
           actual: '—',
           error: 'Execution failed',
         })),
@@ -178,7 +179,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
         testResults: question.testCases.map((testCase) => ({
           id: testCase.id,
           passed: false,
-          expected: testCase.expectedOutput,
+          expected: formatExpectedTestOutput(testCase),
           actual: '—',
           error: 'Execution failed',
         })),
@@ -459,15 +460,29 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
 
         <div className="flex min-h-0 flex-[2] flex-col border-t border-border lg:flex-row">
           <section className="flex min-h-0 min-w-0 flex-1 flex-col border-b border-border bg-card lg:border-b-0 lg:border-r">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <p className="text-sm font-semibold text-foreground">Testcases</p>
-              <button
-                type="button"
-                disabled
-                className="text-xs font-medium text-muted-foreground"
-              >
-                + Add
-              </button>
+            <div className="border-b border-border px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-foreground">Testcases</p>
+                <button
+                  type="button"
+                  disabled
+                  className="text-xs font-medium text-muted-foreground"
+                >
+                  + Add
+                </button>
+              </div>
+              {question.judging?.comparisonNote ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {question.judging.comparisonNote}
+                </p>
+              ) : null}
+              {question.testcaseSummary ? (
+                <p className="mt-1 text-[11px] text-muted-foreground/80">
+                  {question.testcaseSummary.sample} sample ·{' '}
+                  {question.testcaseSummary.hidden} hidden ·{' '}
+                  {question.testcaseSummary.countOnly} count-only checks
+                </p>
+              ) : null}
             </div>
 
             <div className="flex min-h-0 flex-1">
@@ -508,9 +523,15 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                 {activeCase ? (
                   <>
                     <Field label="Input" value={activeCase.input} />
+                    {activeCase.validationType === 'count_only' ? (
+                      <Field
+                        label="Validation"
+                        value="Count-only (order does not matter)"
+                      />
+                    ) : null}
                     <Field
                       label="Expected Output"
-                      value={activeCase.expectedOutput}
+                      value={formatExpectedTestOutput(activeCase)}
                     />
                     {result ? (
                       <Field

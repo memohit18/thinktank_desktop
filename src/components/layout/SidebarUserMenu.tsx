@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import UserAvatar from '@/components/layout/UserAvatar';
 import { clearAuthTokens, getAccessToken } from '@/lib/auth/cookies';
-import { decodeTokenPayload, isAccessTokenValid } from '@/lib/auth/token';
+import { clearRefreshTimer } from '@/lib/auth/refreshToken';
+import { decodeTokenPayload } from '@/lib/auth/token';
 import { useGetProfileQuery } from '@/lib/services/profileApi';
 
 export default function SidebarUserMenu() {
@@ -14,7 +15,7 @@ export default function SidebarUserMenu() {
   const { data: profile, isLoading } = useGetProfileQuery();
 
   const token = getAccessToken();
-  const tokenPayload = token && isAccessTokenValid(token) ? decodeTokenPayload(token) : null;
+  const tokenPayload = token ? decodeTokenPayload(token) : null;
   const fallbackName = tokenPayload?.email?.split('@')[0] ?? 'User';
   const displayName = profile?.name || fallbackName;
   const profileData = profile ?? {
@@ -40,6 +41,7 @@ export default function SidebarUserMenu() {
 
   function handleSignOut() {
     clearAuthTokens();
+    clearRefreshTimer();
     router.push('/');
   }
 

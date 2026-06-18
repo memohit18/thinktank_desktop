@@ -1,10 +1,34 @@
 export type QuestionStatus = 'solved' | 'in_progress' | 'not_started';
 
+export type TestValidationType = 'exact' | 'count_only';
+
+export type TestComparisonMode = 'exact' | 'unordered_array';
+
 export type TestCase = {
   id: string;
   input: string;
   expectedOutput: string;
+  expectedOutputCount?: number;
+  validationType: TestValidationType;
+  comparisonMode: TestComparisonMode;
   runExpression: string;
+  isSample?: boolean;
+  isHidden?: boolean;
+};
+
+export type QuestionJudging = {
+  outputType: string;
+  supportsCountOnlyValidation: boolean;
+  comparisonNote?: string;
+};
+
+export type QuestionTestcaseSummary = {
+  total: number;
+  sample: number;
+  hidden: number;
+  exact: number;
+  countOnly: number;
+  hiddenCountOnly: number;
 };
 
 export type QuestionExample = {
@@ -36,6 +60,9 @@ export type CodeQuestion = {
   likes?: number;
   timeComplexity?: string;
   spaceComplexity?: string;
+  outputType?: string;
+  judging?: QuestionJudging;
+  testcaseSummary?: QuestionTestcaseSummary;
   starterCode: string;
   testCases: TestCase[];
 };

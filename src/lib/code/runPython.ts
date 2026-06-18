@@ -1,6 +1,12 @@
 const PYODIDE_VERSION = '0.26.4';
 const PYODIDE_CDN = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 
+import type { TestCase } from '@/lib/code/questions';
+import {
+  buildPythonComparisonScript,
+  formatExpectedTestOutput,
+} from '@/lib/code/testCaseComparison';
+
 type PyodideInterface = {
   runPythonAsync: (code: string) => Promise<unknown>;
   globals: {
@@ -32,6 +38,7 @@ export type ExecutionResult = {
 
 let pyodidePromise: Promise<PyodideInterface> | null = null;
 let pyodideLoading = false;
+let comparisonHelpersReady = false;
 
 function loadScript(src: string) {
   return new Promise<void>((resolve, reject) => {
@@ -105,14 +112,17 @@ export async function getPyodide() {
   }
 }
 
+async function ensureComparisonHelpers(pyodide: PyodideInterface) {
+  if (comparisonHelpersReady) return;
+  await pyodide.runPythonAsync(buildPythonComparisonScript());
+  comparisonHelpersReady = true;
+}
+
 export function preloadPyodide() {
   void getPyodide().catch(() => {
     pyodidePromise = null;
+    comparisonHelpersReady = false;
   });
-}
-
-function normalizeOutput(value: string) {
-  return value.trim().replace(/\s+/g, '').toLowerCase();
 }
 
 function formatError(error: unknown) {
@@ -182,15 +192,44 @@ sys.stderr = _old_stderr
       testResult === null || testResult === undefined
         ? null
         : String(testResult),
+    rawResult: await pyodide.runPythonAsync('_test_result'),
   };
+}
+
+async function compareResults(
+  pyodide: PyodideInterface,
+  actual: unknown,
+  testCase: TestCase,
+) {
+  pyodide.globals.set('__actual_result__', actual);
+  pyodide.globals.set('__expected_repr__', testCase.expectedOutput ?? '');
+  pyodide.globals.set('__validation_type__', testCase.validationType);
+  pyodide.globals.set(
+    '__expected_count__',
+    testCase.expectedOutputCount ?? -1,
+  );
+  pyodide.globals.set('__comparison_mode__', testCase.comparisonMode);
+
+  const passed = await pyodide.runPythonAsync(`
+__compare_test_result(
+    __actual_result__,
+    __expected_repr__,
+    __validation_type__,
+    __expected_count__,
+    __comparison_mode__,
+)
+`);
+
+  return Boolean(passed);
 }
 
 export async function executePython(
   userCode: string,
-  testCases: { id: string; runExpression: string; expectedOutput: string }[],
+  testCases: TestCase[],
 ): Promise<ExecutionResult> {
   const startedAt = performance.now();
   const pyodide = await getPyodide();
+  await ensureComparisonHelpers(pyodide);
   const consoleLines: string[] = [];
 
   const initialRun = await runInSandbox(pyodide, userCode);
@@ -206,7 +245,7 @@ export async function executePython(
       testResults: testCases.map((testCase) => ({
         id: testCase.id,
         passed: false,
-        expected: testCase.expectedOutput,
+        expected: formatExpectedTestOutput(testCase),
         actual: '—',
         error: initialRun.execError,
       })),
@@ -231,7 +270,7 @@ export async function executePython(
       testResults.push({
         id: testCase.id,
         passed: false,
-        expected: testCase.expectedOutput,
+        expected: formatExpectedTestOutput(testCase),
         actual: 'Error',
         error: testRun.execError ?? testRun.testError,
       });
@@ -239,14 +278,24 @@ export async function executePython(
     }
 
     const actual = testRun.testResult ?? 'None';
-    const passed =
-      normalizeOutput(actual) === normalizeOutput(testCase.expectedOutput);
+    const passed = await compareResults(pyodide, testRun.rawResult, testCase);
+
+    let actualDisplay = actual;
+    if (testCase.validationType === 'count_only') {
+      pyodide.globals.set('__actual_result__', testRun.rawResult);
+      const resultCount = Number(
+        await pyodide.runPythonAsync(`
+len(__actual_result__) if isinstance(__actual_result__, (list, tuple, set)) else 0
+`),
+      );
+      actualDisplay = `${resultCount} result${resultCount === 1 ? '' : 's'}`;
+    }
 
     testResults.push({
       id: testCase.id,
       passed,
-      expected: testCase.expectedOutput,
-      actual,
+      expected: formatExpectedTestOutput(testCase),
+      actual: actualDisplay,
       error: null,
     });
   }

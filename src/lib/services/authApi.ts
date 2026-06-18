@@ -1,5 +1,5 @@
 import { apiSlice } from './apiSlice';
-import type { LoginRequest, LoginResponse } from '@/lib/auth/types';
+import type { LoginRequest, LoginResponse, RefreshRequest } from '@/lib/auth/types';
 
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -14,7 +14,17 @@ export const authApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Auth'],
     }),
+    refresh: builder.mutation<LoginResponse, RefreshRequest>({
+      query: (body) => ({
+        url: '/auth/refresh',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useLoginMutation } = authApi;
+export const { useLoginMutation, useRefreshMutation } = authApi;

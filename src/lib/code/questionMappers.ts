@@ -1,5 +1,12 @@
 import type { ProblemListItem } from '@/lib/code/problemTypes';
-import type { CodeQuestion, QuestionExample, QuestionStatus, TestCase } from '@/lib/code/questions';
+import type {
+  CodeQuestion,
+  QuestionExample,
+  QuestionStatus,
+  TestCase,
+  TestComparisonMode,
+  TestValidationType,
+} from '@/lib/code/questions';
 
 export type RemoteQuestionExample = {
   input: Record<string, unknown>;
@@ -9,10 +16,27 @@ export type RemoteQuestionExample = {
 
 export type RemoteSampleTestcase = {
   input: Record<string, unknown>;
-  expectedOutput: unknown;
+  expectedOutput?: unknown;
+  expectedOutputCount?: number;
+  validationType?: TestValidationType;
   isSample?: boolean;
   isHidden?: boolean;
   weight?: number;
+};
+
+export type RemoteQuestionJudging = {
+  outputType: string;
+  supportsCountOnlyValidation: boolean;
+  comparisonNote?: string;
+};
+
+export type RemoteQuestionTestcaseSummary = {
+  total: number;
+  sample: number;
+  hidden: number;
+  exact: number;
+  countOnly: number;
+  hiddenCountOnly: number;
 };
 
 export type RemoteQuestion = {
@@ -36,6 +60,9 @@ export type RemoteQuestion = {
 };
 
 export type RemoteQuestionDetail = RemoteQuestion & {
+  outputType?: string;
+  judging?: RemoteQuestionJudging;
+  testcaseSummary?: RemoteQuestionTestcaseSummary;
   sampleTestcases: RemoteSampleTestcase[];
   hiddenTestcaseCount?: number;
   starterCode?: string;
@@ -119,6 +146,22 @@ function buildStarterCode(functionName: string, input: Record<string, unknown>) 
   return `def ${functionName}(${params}):\n    pass`;
 }
 
+function resolveComparisonMode(outputType?: string): TestComparisonMode {
+  if (outputType === 'unordered_array') return 'unordered_array';
+  return 'exact';
+}
+
+function resolveValidationType(testcase: RemoteSampleTestcase): TestValidationType {
+  if (testcase.validationType === 'count_only') return 'count_only';
+  if (
+    testcase.expectedOutputCount !== undefined &&
+    testcase.expectedOutput === undefined
+  ) {
+    return 'count_only';
+  }
+  return 'exact';
+}
+
 function mapExamples(
   examples: RemoteQuestionExample[],
   sampleTestcases: RemoteSampleTestcase[],
@@ -126,10 +169,12 @@ function mapExamples(
   const source: RemoteQuestionExample[] =
     examples.length > 0
       ? examples
-      : sampleTestcases.map((testcase) => ({
-          input: testcase.input,
-          output: testcase.expectedOutput,
-        }));
+      : sampleTestcases
+          .filter((testcase) => resolveValidationType(testcase) === 'exact')
+          .map((testcase) => ({
+            input: testcase.input,
+            output: testcase.expectedOutput,
+          }));
 
   return source.map((example, index) => ({
     label: `Example ${index + 1}`,
@@ -142,13 +187,27 @@ function mapExamples(
 function mapSampleTestcases(
   functionName: string,
   sampleTestcases: RemoteSampleTestcase[],
+  comparisonMode: TestComparisonMode,
 ): TestCase[] {
-  return sampleTestcases.map((testcase, index) => ({
-    id: `tc-${index + 1}`,
-    input: formatInputDisplay(testcase.input),
-    expectedOutput: toPythonLiteral(testcase.expectedOutput),
-    runExpression: buildRunExpression(functionName, testcase.input),
-  }));
+  return sampleTestcases.map((testcase, index) => {
+    const validationType = resolveValidationType(testcase);
+    const mapped: TestCase = {
+      id: `tc-${index + 1}`,
+      input: formatInputDisplay(testcase.input),
+      expectedOutput:
+        validationType === 'count_only'
+          ? ''
+          : toPythonLiteral(testcase.expectedOutput),
+      expectedOutputCount: testcase.expectedOutputCount,
+      validationType,
+      comparisonMode,
+      runExpression: buildRunExpression(functionName, testcase.input),
+      isSample: testcase.isSample,
+      isHidden: testcase.isHidden,
+    };
+
+    return mapped;
+  });
 }
 
 export function mapRemoteQuestionDetailToCodeQuestion(
@@ -163,6 +222,8 @@ export function mapRemoteQuestionDetailToCodeQuestion(
     {};
   const starterCode =
     question.starterCode ?? buildStarterCode(functionName, signatureInput);
+  const outputType = question.outputType ?? question.judging?.outputType;
+  const comparisonMode = resolveComparisonMode(outputType);
 
   return {
     id: String(question.questionId),
@@ -185,8 +246,21 @@ export function mapRemoteQuestionDetailToCodeQuestion(
     tags: question.tags ?? [],
     timeComplexity: question.expectedTimeComplexity,
     spaceComplexity: question.expectedSpaceComplexity,
+    outputType,
+    judging: question.judging
+      ? {
+          outputType: question.judging.outputType,
+          supportsCountOnlyValidation: question.judging.supportsCountOnlyValidation,
+          comparisonNote: question.judging.comparisonNote,
+        }
+      : undefined,
+    testcaseSummary: question.testcaseSummary,
     starterCode,
-    testCases: mapSampleTestcases(functionName, question.sampleTestcases ?? []),
+    testCases: mapSampleTestcases(
+      functionName,
+      question.sampleTestcases ?? [],
+      comparisonMode,
+    ),
   };
 }
 

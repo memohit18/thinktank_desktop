@@ -28,3 +28,13 @@ export function isAccessTokenValid(token: string | undefined | null) {
 
   return payload.exp * 1000 > Date.now();
 }
+
+export function isRefreshTokenValid(token: string | undefined | null) {
+  if (!token) return false;
+
+  const payload = decodeTokenPayload(token);
+
+  if (!payload?.exp) return true;
+
+  return payload.exp * 1000 > Date.now();
+}

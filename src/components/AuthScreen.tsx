@@ -9,7 +9,9 @@ import AuthLayout, {
 import AuthModeToggle from '@/components/auth/AuthModeToggle';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/providers/AuthProvider';
 import { setAuthTokens } from '@/lib/auth/cookies';
+import { scheduleProactiveTokenRefresh } from '@/lib/auth/refreshToken';
 import { extractAuthTokens } from '@/lib/auth/types';
 import { useLoginMutation } from '@/lib/services/authApi';
 import { getApiErrorMessage } from '@/lib/services/getApiErrorMessage';
@@ -21,6 +23,7 @@ export default function AuthScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
+  const { refreshSession } = useAuth();
   const [login, { isLoading }] = useLoginMutation();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [name, setName] = useState('');
@@ -45,6 +48,8 @@ export default function AuthScreen() {
       const tokens = extractAuthTokens(response);
 
       setAuthTokens(tokens.access, tokens.refresh);
+      scheduleProactiveTokenRefresh();
+      await refreshSession();
       showToast('Login successful!');
 
       window.setTimeout(() => {

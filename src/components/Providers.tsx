@@ -2,6 +2,7 @@
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { ToastProvider } from '@/components/ui/Toast';
+import AuthProvider from '@/providers/AuthProvider';
 import ReduxProvider from '@/providers/ReduxProvider';
 import ThemeProvider from '@/providers/ThemeProvider';
 
@@ -11,7 +12,9 @@ function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <ToastProvider>
-        <ReduxProvider>{children}</ReduxProvider>
+        <ReduxProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ReduxProvider>
       </ToastProvider>
     </ThemeProvider>
   );
@@ -30,7 +33,9 @@ export default function Providers({
     <ThemeProvider>
       <GoogleOAuthProvider clientId={googleClientId}>
         <ToastProvider>
-          <ReduxProvider>{children}</ReduxProvider>
+          <ReduxProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </ReduxProvider>
         </ToastProvider>
       </GoogleOAuthProvider>
     </ThemeProvider>
