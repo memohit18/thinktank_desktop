@@ -11,9 +11,17 @@ import {
   shouldAttemptTokenRefresh,
 } from '@/lib/auth/refreshToken';
 
+function isPublicAuthRequest(endpoint: string) {
+  return endpoint === 'login' || endpoint === 'signup';
+}
+
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: '/api',
-  prepareHeaders: async (headers) => {
+  prepareHeaders: async (headers, { endpoint }) => {
+    if (isPublicAuthRequest(endpoint)) {
+      return headers;
+    }
+
     const accessToken = await getValidAccessToken();
 
     if (accessToken) {

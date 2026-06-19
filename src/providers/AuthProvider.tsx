@@ -8,13 +8,13 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { getRefreshToken } from '@/lib/auth/cookies';
+import { getAccessToken, getRefreshToken } from '@/lib/auth/cookies';
+import { isAccessTokenValid, isRefreshTokenValid } from '@/lib/auth/token';
 import {
   ensureValidSession,
   refreshAccessToken,
   scheduleProactiveTokenRefresh,
 } from '@/lib/auth/refreshToken';
-import { isRefreshTokenValid } from '@/lib/auth/token';
 
 type AuthStatus = 'loading' | 'authenticated' | 'anonymous';
 
@@ -24,6 +24,7 @@ type AuthContextValue = {
   isLoading: boolean;
   ensureSession: () => Promise<boolean>;
   refreshSession: () => Promise<boolean>;
+  syncSessionFromCookies: () => boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -39,6 +40,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const ensureSession = useCallback(async () => {
     const hasSession = await ensureValidSession();
+    setStatus(hasSession ? 'authenticated' : 'anonymous');
+    return hasSession;
+  }, []);
+
+  const syncSessionFromCookies = useCallback(() => {
+    const accessToken = getAccessToken();
+    const refreshToken = getRefreshToken();
+    const hasSession =
+      isAccessTokenValid(accessToken) || isRefreshTokenValid(refreshToken);
+
     setStatus(hasSession ? 'authenticated' : 'anonymous');
     return hasSession;
   }, []);
@@ -79,8 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading: status === 'loading',
       ensureSession,
       refreshSession,
+      syncSessionFromCookies,
     }),
-    [status, ensureSession, refreshSession],
+    [status, ensureSession, refreshSession, syncSessionFromCookies],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

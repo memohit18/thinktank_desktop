@@ -1,5 +1,10 @@
 import { apiSlice } from './apiSlice';
-import type { LoginRequest, LoginResponse, RefreshRequest } from '@/lib/auth/types';
+import type {
+  LoginRequest,
+  LoginResponse,
+  RefreshRequest,
+  SignupRequest,
+} from '@/lib/auth/types';
 
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -14,6 +19,16 @@ export const authApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Auth'],
     }),
+    signup: builder.mutation<LoginResponse, SignupRequest>({
+      query: (body) => ({
+        url: '/auth/signup',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body,
+      }),
+    }),
     refresh: builder.mutation<LoginResponse, RefreshRequest>({
       query: (body) => ({
         url: '/auth/refresh',
@@ -27,4 +42,8 @@ export const authApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useLoginMutation, useRefreshMutation } = authApi;
+export const {
+  useLoginMutation,
+  useSignupMutation,
+  useRefreshMutation,
+} = authApi;

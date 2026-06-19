@@ -13,7 +13,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { setAuthTokens } from '@/lib/auth/cookies';
 import { scheduleProactiveTokenRefresh } from '@/lib/auth/refreshToken';
 import { extractAuthTokens } from '@/lib/auth/types';
-import { useLoginMutation } from '@/lib/services/authApi';
+import { useLoginMutation, useSignupMutation } from '@/lib/services/authApi';
 import { getApiErrorMessage } from '@/lib/services/getApiErrorMessage';
 
 const inputClassName =
@@ -23,8 +23,10 @@ export default function AuthScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
-  const { refreshSession } = useAuth();
-  const [login, { isLoading }] = useLoginMutation();
+  const { syncSessionFromCookies } = useAuth();
+  const [login, { isLoading: isLoggingIn }] = useLoginMutation();
+  const [signup, { isLoading: isSigningUp }] = useSignupMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -41,6 +43,10 @@ export default function AuthScreen() {
 
   async function handleLoginSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isSubmitting || isLoggingIn) return;
+
+    setIsSubmitting(true);
     setErrorMessage('');
 
     try {
@@ -49,12 +55,11 @@ export default function AuthScreen() {
 
       setAuthTokens(tokens.access, tokens.refresh);
       scheduleProactiveTokenRefresh();
-      await refreshSession();
+      syncSessionFromCookies();
       showToast('Login successful!');
 
-      window.setTimeout(() => {
-        router.push('/dashboard');
-      }, 1000);
+      const redirectTo = searchParams.get('redirect') || '/dashboard';
+      router.push(redirectTo);
     } catch (error) {
       const message = getApiErrorMessage(
         error,
@@ -63,11 +68,15 @@ export default function AuthScreen() {
 
       setErrorMessage(message);
       showToast(message, 'error');
+      setIsSubmitting(false);
     }
   }
 
-  function handleSignupSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSignupSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isSubmitting || isSigningUp) return;
+
     setErrorMessage('');
 
     if (password !== confirmPassword) {
@@ -77,10 +86,44 @@ export default function AuthScreen() {
       return;
     }
 
-    showToast('Sign up is not connected yet.', 'error');
+    setIsSubmitting(true);
+
+    try {
+      const response = await signup({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      }).unwrap();
+
+      try {
+        const tokens = extractAuthTokens(response);
+        setAuthTokens(tokens.access, tokens.refresh);
+        scheduleProactiveTokenRefresh();
+        syncSessionFromCookies();
+        showToast('Account created successfully!');
+        router.push('/dashboard');
+        return;
+      } catch {
+        showToast('Account created! Please sign in with your credentials.');
+        setMode('login');
+        setPassword('');
+        setConfirmPassword('');
+        setIsSubmitting(false);
+      }
+    } catch (error) {
+      const message = getApiErrorMessage(
+        error,
+        'Sign up failed. Please check your details and try again.',
+      );
+
+      setErrorMessage(message);
+      showToast(message, 'error');
+      setIsSubmitting(false);
+    }
   }
 
   const isLogin = mode === 'login';
+  const isBusy = isSubmitting || isLoggingIn || isSigningUp;
 
   return (
     <AuthLayout>
@@ -92,7 +135,7 @@ export default function AuthScreen() {
             : 'Request access to your secure ThinkTank portal.'
         }
       >
-        <AuthModeToggle mode={mode} onChange={setMode} />
+        <AuthModeToggle mode={mode} onChange={setMode} disabled={isBusy} />
 
         {isLogin ? (
           <form onSubmit={handleLoginSubmit} className="space-y-5">
@@ -105,7 +148,7 @@ export default function AuthScreen() {
                   type="email"
                   autoComplete="email"
                   required
-                  disabled={isLoading}
+                  disabled={isBusy}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="name@securecore.tech"
@@ -135,7 +178,7 @@ export default function AuthScreen() {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
-                  disabled={isLoading}
+                  disabled={isBusy}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="••••••••"
@@ -154,15 +197,16 @@ export default function AuthScreen() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isBusy}
+              aria-busy={isBusy}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
-              {!isLoading ? <ArrowIcon /> : null}
+              {isBusy ? 'Signing in...' : 'Sign In'}
+              {!isBusy ? <ArrowIcon /> : null}
             </button>
           </form>
         ) : (
-          <form onSubmit={handleSignupSubmit} className="space-y-5">
+          <form onSubmit={(event) => void handleSignupSubmit(event)} className="space-y-5">
             {errorMessage ? <AuthError message={errorMessage} /> : null}
 
             <AuthField label="Full Name" htmlFor="name">
@@ -171,6 +215,7 @@ export default function AuthScreen() {
                 type="text"
                 autoComplete="name"
                 required
+                disabled={isBusy}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 placeholder="Jane Doe"
@@ -185,6 +230,7 @@ export default function AuthScreen() {
                   type="email"
                   autoComplete="email"
                   required
+                  disabled={isBusy}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="name@securecore.tech"
@@ -203,6 +249,7 @@ export default function AuthScreen() {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   required
+                  disabled={isBusy}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="Create a password"
@@ -224,6 +271,7 @@ export default function AuthScreen() {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
+                disabled={isBusy}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 placeholder="Confirm your password"
@@ -233,9 +281,12 @@ export default function AuthScreen() {
 
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90"
+              disabled={isBusy}
+              aria-busy={isBusy}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 dark:text-black"
             >
-              Create Account
+              {isBusy ? 'Creating account...' : 'Create Account'}
+              {!isBusy ? <ArrowIcon /> : null}
             </button>
           </form>
         )}
@@ -244,6 +295,7 @@ export default function AuthScreen() {
           <AuthDivider />
           <GoogleSignInButton
             label={isLogin ? 'Continue with Google' : 'Sign up with Google'}
+            disabled={isBusy}
           />
         </div>
       </AuthCard>

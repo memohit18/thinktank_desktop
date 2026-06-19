@@ -5,11 +5,13 @@ import GoogleSignInButtonWithOAuth from '@/components/GoogleSignInButtonWithOAut
 type GoogleSignInButtonProps = {
   label?: string;
   onSuccess?: (accessToken: string) => void;
+  disabled?: boolean;
 };
 
 export default function GoogleSignInButton({
   label = 'Continue with Google',
   onSuccess,
+  disabled = false,
 }: GoogleSignInButtonProps) {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -28,7 +30,11 @@ export default function GoogleSignInButton({
   }
 
   return (
-    <GoogleSignInButtonWithOAuth label={label} onSuccess={onSuccess} />
+    <GoogleSignInButtonWithOAuth
+      label={label}
+      onSuccess={onSuccess}
+      disabled={disabled}
+    />
   );
 }
 

@@ -10,9 +10,13 @@ const themes = [
 
 type ThemeToggleProps = {
   variant?: 'default' | 'sidebar';
+  collapsed?: boolean;
 };
 
-export default function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
+export default function ThemeToggle({
+  variant = 'default',
+  collapsed = false,
+}: ThemeToggleProps) {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -26,7 +30,7 @@ export default function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
         aria-hidden
         className={
           variant === 'sidebar'
-            ? 'h-10 rounded-xl bg-muted'
+            ? 'h-10 w-full rounded-xl bg-muted'
             : 'h-9 w-[120px] rounded-lg border border-border bg-muted'
         }
       />
@@ -43,7 +47,9 @@ export default function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
       <div
         role="group"
         aria-label="Theme"
-        className="flex gap-1 rounded-xl bg-muted p-1"
+        className={`relative z-0 flex w-full gap-1 rounded-xl bg-muted p-1 ${
+          collapsed ? 'flex-col' : ''
+        }`}
       >
         {themes.map((option) => {
           const isActive = displayTheme === option.value;
@@ -56,14 +62,18 @@ export default function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
               onClick={() => setTheme(option.value)}
               aria-pressed={isActive}
               title={option.label}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-colors ${
+              className={`flex min-h-9 items-center justify-center rounded-lg transition-colors ${
+                collapsed ? 'px-2 py-2' : 'min-h-9 flex-1 gap-1.5 px-2 py-2'
+              } text-xs font-medium ${
                 isActive
-                  ? 'bg-accent text-accent-foreground dark:text-black dark:sidebar-active-glow'
+                  ? 'bg-accent text-accent-foreground dark:text-black'
                   : 'text-sidebar-text hover:bg-card hover:text-sidebar-text-hover'
               }`}
             >
-              <Icon className="size-4" />
-              <span>{option.label}</span>
+              <Icon className="size-4 shrink-0" />
+              {!collapsed ? (
+                <span className="truncate">{option.label}</span>
+              ) : null}
             </button>
           );
         })}

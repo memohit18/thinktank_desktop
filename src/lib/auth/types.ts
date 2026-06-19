@@ -7,6 +7,12 @@ export type LoginRequest = {
   password: string;
 };
 
+export type SignupRequest = {
+  name: string;
+  email: string;
+  password: string;
+};
+
 export type LoginResponse = {
   access?: string;
   refresh?: string;

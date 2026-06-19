@@ -2,9 +2,10 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AppHeader from '@/components/layout/AppHeader';
-import AppSidebar from '@/components/layout/AppSidebar';
+import ProtectedShell from '@/components/layout/ProtectedShell';
 import { useAuth } from '@/providers/AuthProvider';
+import SettingsProvider from '@/providers/SettingsProvider';
+import SidebarProvider from '@/providers/SidebarProvider';
 
 export default function ProtectedLayout({
   children,
@@ -29,12 +30,10 @@ export default function ProtectedLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background pl-64">
-      <AppSidebar />
-      <div className="flex min-h-screen flex-col">
-        <AppHeader />
-        {children}
-      </div>
-    </div>
+    <SettingsProvider>
+      <SidebarProvider>
+        <ProtectedShell>{children}</ProtectedShell>
+      </SidebarProvider>
+    </SettingsProvider>
   );
 }

@@ -5,11 +5,13 @@ import { useGoogleLogin } from '@react-oauth/google';
 type GoogleSignInButtonProps = {
   label?: string;
   onSuccess?: (accessToken: string) => void;
+  disabled?: boolean;
 };
 
 export default function GoogleSignInButtonWithOAuth({
   label = 'Continue with Google',
   onSuccess,
+  disabled = false,
 }: GoogleSignInButtonProps) {
   const login = useGoogleLogin({
     onSuccess: (response) => {
@@ -22,7 +24,8 @@ export default function GoogleSignInButtonWithOAuth({
     <button
       type="button"
       onClick={() => login()}
-      className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+      disabled={disabled}
+      className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
     >
       <GoogleIcon />
       {label}

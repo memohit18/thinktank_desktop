@@ -2,77 +2,136 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
 import SidebarUserMenu from '@/components/layout/SidebarUserMenu';
-
-type NavItem = {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-};
-
-const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: DashboardIcon },
-  { label: 'Coding Challenges', href: '/code', icon: ProjectsIcon },
-];
+import {
+  APP_NAV_ITEMS,
+  isNavItemActive,
+  type NavIconId,
+} from '@/lib/settings/navConfig';
+import { useSidebar } from '@/providers/SidebarProvider';
+import { useSettings } from '@/providers/SettingsProvider';
 
 export default function AppSidebar() {
   const pathname = usePathname();
+  const { pinned, togglePinned } = useSidebar();
+  const { visibleNavItems } = useSettings();
+  const [isHovered, setIsHovered] = useState(false);
+
+  const expanded = pinned || isHovered;
+  const collapsed = !expanded;
+  const isOverlay = expanded && !pinned;
+
+  const navItems = APP_NAV_ITEMS.filter((item) =>
+    visibleNavItems.some((visibleItem) => visibleItem.id === item.id),
+  );
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-sidebar-border bg-sidebar-bg">
-      <div className="border-b border-sidebar-border px-5 py-5">
-        <Link href="/dashboard" className="flex items-center gap-3">
+    <aside
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`fixed inset-y-0 left-0 flex flex-col border-r border-sidebar-border bg-sidebar-bg transition-[width,box-shadow] duration-200 ${
+        expanded ? 'w-64' : 'w-[4.5rem]'
+      } ${isOverlay ? 'z-50 shadow-2xl' : 'z-40'}`}
+    >
+      <div
+        className={`flex items-center border-b border-sidebar-border ${
+          collapsed ? 'justify-center px-2 py-4' : 'justify-between gap-2 px-4 py-5'
+        }`}
+      >
+        <Link
+          href="/dashboard"
+          className={`flex min-w-0 items-center ${collapsed ? '' : 'gap-3'}`}
+          title="ThinkTank"
+        >
           <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sidebar-logo-bg text-sm font-bold text-white">
             <TerminalIcon className="size-5 text-white" />
           </div>
-          <div>
-            <p className="text-base font-bold text-sidebar-brand">ThinkTank</p>
-            <p className="text-xs text-sidebar-muted">Enterprise Portal</p>
-          </div>
+          {!collapsed ? (
+            <div className="min-w-0">
+              <p className="truncate text-base font-bold text-sidebar-brand">
+                ThinkTank
+              </p>
+              <p className="truncate text-xs text-sidebar-muted">
+                Enterprise Portal
+              </p>
+            </div>
+          ) : null}
         </Link>
+
+        {!collapsed ? (
+          <button
+            type="button"
+            onClick={togglePinned}
+            aria-label={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+            aria-pressed={pinned}
+            title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+            className={`flex size-8 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+              pinned
+                ? 'border-accent bg-accent/10 text-accent'
+                : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <PinIcon className="size-4" filled={pinned} />
+          </button>
+        ) : null}
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 pt-4">
+      <nav
+        className={`min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden pt-4 ${
+          collapsed ? 'px-2' : 'px-3'
+        }`}
+      >
         {navItems.map((item) => {
-          const isActive =
-            item.href === '/code'
-              ? pathname === '/code' || pathname.startsWith('/code/')
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const Icon = item.icon;
+          const isActive = isNavItemActive(pathname, item.href);
 
           return (
             <Link
-              key={item.label}
+              key={item.id}
               href={item.href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+              title={item.label}
+              className={`flex items-center rounded-xl text-sm font-medium transition-colors ${
+                collapsed
+                  ? 'justify-center px-0 py-2.5'
+                  : 'gap-3 px-3 py-2.5'
+              } ${
                 isActive
                   ? 'sidebar-link-active'
                   : 'text-sidebar-text hover:bg-muted hover:text-sidebar-text-hover'
               }`}
             >
-              <Icon className="size-5 shrink-0" />
-              {item.label}
+              <NavIcon icon={item.icon} className="size-5 shrink-0" />
+              {!collapsed ? <span className="truncate">{item.label}</span> : null}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border p-3">
-        <SidebarUserMenu />
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-text transition-colors hover:bg-muted hover:text-sidebar-text-hover"
-        >
-          <SettingsIcon className="size-5" />
-          Settings
-        </Link>
-        <div className="mt-3 px-1">
-          <ThemeToggle variant="sidebar" />
-        </div>
+      <div
+        className={`shrink-0 space-y-2 border-t border-sidebar-border ${
+          collapsed ? 'p-2' : 'p-3'
+        }`}
+      >
+        <SidebarUserMenu collapsed={collapsed} />
+        <ThemeToggle variant="sidebar" collapsed={collapsed} />
       </div>
     </aside>
   );
+}
+
+function NavIcon({
+  icon,
+  className,
+}: {
+  icon: NavIconId;
+  className?: string;
+}) {
+  if (icon === 'dashboard') {
+    return <DashboardIcon className={className} />;
+  }
+
+  return <ProjectsIcon className={className} />;
 }
 
 function DashboardIcon({ className }: { className?: string }) {
@@ -96,11 +155,25 @@ function ProjectsIcon({ className }: { className?: string }) {
   );
 }
 
-function SettingsIcon({ className }: { className?: string }) {
+function PinIcon({
+  className,
+  filled = false,
+}: {
+  className?: string;
+  filled?: boolean;
+}) {
+  if (filled) {
+    return (
+      <svg aria-hidden viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path d="M16 3v2.2l1.6 1.6-1.4 1.4-1.6-1.6H12v10.8l1.6 1.6-1.4 1.4L9 18.8V7.6H7.4L5.8 9.2 4.4 7.8 6 6.2V3h10z" />
+      </svg>
+    );
+  }
+
   return (
     <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+      <path d="M12 17v5" />
+      <path d="M9 3h6v5l4.5 4.5a2.1 2.1 0 0 1-2.9 2.9L12 12V3z" />
     </svg>
   );
 }

@@ -15,7 +15,11 @@ let refreshPromise: Promise<string | null> | null = null;
 let refreshTimer: number | null = null;
 
 function isAuthEndpoint(url: string) {
-  return url.includes('/auth/login') || url.includes('/auth/refresh');
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/signup') ||
+    url.includes('/auth/refresh')
+  );
 }
 
 export function clearRefreshTimer() {
