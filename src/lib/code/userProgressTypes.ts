@@ -8,6 +8,7 @@ export type UserProgressStatus =
 export type UserProgressFiltersResponse = {
   statuses: UserProgressStatus[];
   countsByStatus: Record<UserProgressStatus, number>;
+  totalQuestions: number;
 };
 
 export type UserProgressQuestion = {
@@ -27,17 +28,35 @@ export type UserProgressItem = {
 export type UserProgressResponse = {
   items: UserProgressItem[];
   meta: {
-    page: number;
-    limit: number;
     total: number;
-    totalPages: number;
     appliedFilters: Record<string, string>;
   };
   filters: UserProgressFiltersResponse;
 };
 
 export type UserProgressParams = {
-  page?: number;
-  limit?: number;
   status?: string;
+};
+
+export type DailyActivityDay = {
+  date: string;
+  attempted: boolean;
+};
+
+export type DailyActivityResponse = {
+  year: number;
+  month: number;
+  monthKey: string;
+  startDate: string;
+  endDate: string;
+  timezone: string;
+  days: DailyActivityDay[];
+  summary: {
+    activeDays: number;
+    totalDays: number;
+  };
+};
+
+export type DailyActivityParams = {
+  month: string;
 };

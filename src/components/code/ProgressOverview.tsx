@@ -2,46 +2,29 @@
 
 import type { UserProgressStatus } from '@/lib/code/userProgressTypes';
 
-const STATUS_SEGMENTS: {
-  status: UserProgressStatus;
+const FILTER_CHIPS: {
+  status: UserProgressStatus | 'all';
   label: string;
-  barClass: string;
-  chipClass: string;
 }[] = [
-  {
-    status: 'Mastered',
-    label: 'Mastered',
-    barClass: 'bg-amber-400',
-    chipClass: 'border-amber-400/40 bg-amber-400/10 text-amber-500',
-  },
-  {
-    status: 'Revised',
-    label: 'Revised',
-    barClass: 'bg-violet-400',
-    chipClass: 'border-violet-400/40 bg-violet-400/10 text-violet-400',
-  },
-  {
-    status: 'Solved',
-    label: 'Solved',
-    barClass: 'bg-accent',
-    chipClass: 'border-accent/40 bg-accent/10 text-accent',
-  },
-  {
-    status: 'Attempted',
-    label: 'Attempted',
-    barClass: 'bg-sky-400',
-    chipClass: 'border-sky-400/40 bg-sky-400/10 text-sky-400',
-  },
-  {
-    status: 'Not Started',
-    label: 'Not Started',
-    barClass: 'bg-muted-foreground/25',
-    chipClass: 'border-border bg-muted/50 text-muted-foreground',
-  },
+  { status: 'all', label: 'All' },
+  { status: 'Mastered', label: 'Mastered' },
+  { status: 'Solved', label: 'Solved' },
+  { status: 'Attempted', label: 'Attempted' },
+];
+
+const BAR_SEGMENTS: {
+  status: UserProgressStatus;
+  barClass: string;
+}[] = [
+  { status: 'Mastered', barClass: 'bg-amber-400' },
+  { status: 'Revised', barClass: 'bg-violet-400' },
+  { status: 'Solved', barClass: 'bg-accent' },
+  { status: 'Attempted', barClass: 'bg-sky-400' },
 ];
 
 type ProgressOverviewProps = {
   totalProblems: number;
+  solvedCount: number;
   countsByStatus: Partial<Record<UserProgressStatus, number>>;
   selectedStatus: string;
   onStatusChange: (status: string) => void;
@@ -49,12 +32,13 @@ type ProgressOverviewProps = {
 
 export default function ProgressOverview({
   totalProblems,
+  solvedCount,
   countsByStatus,
   selectedStatus,
   onStatusChange,
 }: ProgressOverviewProps) {
-  const trackedTotal = STATUS_SEGMENTS.reduce(
-    (sum, segment) => sum + (countsByStatus[segment.status] ?? 0),
+  const trackedTotal = Object.values(countsByStatus).reduce(
+    (sum, count) => sum + (count ?? 0),
     0,
   );
   const denominator = Math.max(totalProblems, trackedTotal, 1);
@@ -66,57 +50,76 @@ export default function ProgressOverview({
   const completionPercent = Math.round((completedCount / denominator) * 100);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">Your progress</p>
-          <p className="mt-1 text-2xl font-bold text-foreground">
-            {completedCount}{' '}
-            <span className="text-base font-medium text-muted-foreground">
-              / {denominator} completed
-            </span>
-          </p>
-        </div>
-        <p className="text-3xl font-bold text-accent">{completionPercent}%</p>
-      </div>
-
-      <div className="mt-4 h-3 overflow-hidden rounded-full bg-muted">
-        <div className="flex h-full w-full">
-          {STATUS_SEGMENTS.map((segment) => {
-            const count = countsByStatus[segment.status] ?? 0;
-            if (count === 0) return null;
-            const width = (count / denominator) * 100;
-            return (
-              <div
-                key={segment.status}
-                className={`h-full ${segment.barClass}`}
-                style={{ width: `${width}%` }}
-                title={`${segment.label}: ${count}`}
-              />
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        <StatusChip
-          label="All"
-          count={denominator}
-          active={selectedStatus === 'all'}
-          className="border-border bg-muted/50 text-foreground"
-          onClick={() => onStatusChange('all')}
+    <div className="flex h-full flex-col justify-center gap-2.5 rounded-xl border border-border bg-card p-2.5 shadow-sm">
+      <div className="grid grid-cols-2 gap-2">
+        <MiniStatCard
+          label="Solved Problems"
+          value={String(solvedCount)}
+          icon={<CheckIcon />}
+          iconClassName="text-accent"
         />
-        {STATUS_SEGMENTS.map((segment) => {
-          const count = countsByStatus[segment.status] ?? 0;
+        <MiniStatCard
+          label="Total Problems"
+          value={String(totalProblems)}
+          icon={<ChartIcon />}
+          iconClassName="text-sky-500"
+        />
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold text-foreground">Overall Progress</p>
+          <p className="text-sm font-bold text-accent">{completionPercent}%</p>
+        </div>
+
+        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="flex h-full w-full">
+            {BAR_SEGMENTS.map((segment) => {
+              const count = countsByStatus[segment.status] ?? 0;
+              if (count === 0) return null;
+              return (
+                <div
+                  key={segment.status}
+                  className={`h-full ${segment.barClass}`}
+                  style={{ width: `${(count / denominator) * 100}%` }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {FILTER_CHIPS.map((chip) => {
+          const count =
+            chip.status === 'all'
+              ? denominator
+              : (countsByStatus[chip.status] ?? 0);
+          const isActive =
+            chip.status === 'all'
+              ? selectedStatus === 'all'
+              : selectedStatus === chip.status;
+
           return (
-            <StatusChip
-              key={segment.status}
-              label={segment.label}
-              count={count}
-              active={selectedStatus === segment.status}
-              className={segment.chipClass}
-              onClick={() => onStatusChange(segment.status)}
-            />
+            <button
+              key={chip.status}
+              type="button"
+              onClick={() => onStatusChange(chip.status)}
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+                isActive
+                  ? 'border-foreground bg-foreground text-background'
+                  : 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              <span>{chip.label}</span>
+              <span
+                className={`rounded-full px-1 py-px text-[9px] ${
+                  isActive ? 'bg-background/20' : 'bg-black/5 dark:bg-white/10'
+                }`}
+              >
+                {count}
+              </span>
+            </button>
           );
         })}
       </div>
@@ -124,31 +127,49 @@ export default function ProgressOverview({
   );
 }
 
-function StatusChip({
+function MiniStatCard({
   label,
-  count,
-  active,
-  className,
-  onClick,
+  value,
+  icon,
+  iconClassName,
 }: {
   label: string;
-  count: number;
-  active: boolean;
-  className: string;
-  onClick: () => void;
+  value: string;
+  icon: React.ReactNode;
+  iconClassName?: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${className} ${
-        active ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : 'opacity-90 hover:opacity-100'
-      }`}
-    >
-      <span>{label}</span>
-      <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[10px] dark:bg-white/10">
-        {count}
-      </span>
-    </button>
+    <div className="rounded-lg border border-border bg-muted/20 px-2 py-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[10px] font-medium text-muted-foreground">{label}</p>
+          <p className="text-base font-bold leading-tight text-foreground">{value}</p>
+        </div>
+        <div
+          className={`shrink-0 rounded-md bg-muted p-1.5 ${iconClassName ?? 'text-muted-foreground'}`}
+        >
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
+function ChartIcon() {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+      <path d="M3 3v18h18" />
+      <path d="M7 16V9" />
+      <path d="M12 16V5" />
+      <path d="M17 16v-4" />
+    </svg>
   );
 }

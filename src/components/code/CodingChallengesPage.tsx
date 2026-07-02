@@ -13,6 +13,7 @@ import {
   useGetUserProgressQuery,
 } from '@/lib/services/userProgressApi';
 import BulkUploadModal from '@/components/code/BulkUploadModal';
+import DailyActivityCalendar from '@/components/code/DailyActivityCalendar';
 import ProgressOverview from '@/components/code/ProgressOverview';
 import RoadmapModal from '@/components/code/RoadmapModal';
 import DataTable, { type DataTableColumn } from '@/components/ui/DataTable';
@@ -22,16 +23,13 @@ import Select from '@/components/ui/Select';
 const PAGE_SIZE = 20;
 
 const TABLE_COLUMNS: DataTableColumn[] = [
-  { key: 'status', label: 'Status' },
-  { key: 'title', label: 'Title' },
-  { key: 'category', label: 'Category', headerClassName: 'hidden md:table-cell' },
-  { key: 'tags', label: 'Tags', headerClassName: 'hidden md:table-cell' },
-  { key: 'pattern', label: 'Pattern', headerClassName: 'hidden lg:table-cell' },
-  { key: 'difficulty', label: 'Difficulty' },
-  { key: 'attempts', label: 'Attempts', headerClassName: 'hidden lg:table-cell' },
-  { key: 'confidence', label: 'Confidence', headerClassName: 'hidden lg:table-cell' },
-  { key: 'tests', label: 'Tests', headerClassName: 'hidden sm:table-cell' },
-  { key: 'action', label: 'Action' },
+  { key: 'status', label: 'ST' },
+  { key: 'title', label: 'TITLE & DESCRIPTION' },
+  { key: 'category', label: 'CATEGORY', headerClassName: 'hidden md:table-cell' },
+  { key: 'tags', label: 'TAGS', headerClassName: 'hidden lg:table-cell' },
+  { key: 'difficulty', label: 'DIFFICULTY' },
+  { key: 'tests', label: 'TESTS', headerClassName: 'hidden sm:table-cell' },
+  { key: 'action', label: '', headerClassName: 'w-14' },
 ];
 
 export default function CodingChallengesPage() {
@@ -59,10 +57,12 @@ export default function CodingChallengesPage() {
 
   const { data: filters } = useGetQuestionFiltersQuery();
   const { data: progressFilters } = useGetUserProgressFiltersQuery();
-  const { data: allProgressData } = useGetUserProgressQuery(
-    { page: 1, limit: 200 },
-    { refetchOnMountOrArgChange: true },
-  );
+  const {
+    data: allProgressData,
+    isLoading: isProgressLoading,
+    isError: isProgressError,
+    isFetching: isProgressFetching,
+  } = useGetUserProgressQuery({}, { refetchOnMountOrArgChange: true });
 
   const problemQueryParams = useMemo(
     () => ({
@@ -81,16 +81,6 @@ export default function CodingChallengesPage() {
     { refetchOnMountOrArgChange: true },
   );
 
-  const {
-    data: progressData,
-    isLoading: isProgressLoading,
-    isError: isProgressError,
-    isFetching: isProgressFetching,
-  } = useGetUserProgressQuery(
-    { page, limit: PAGE_SIZE, status: progressStatus },
-    { refetchOnMountOrArgChange: true, skip: !usesProgressList },
-  );
-
   const progressByQuestionId = useMemo(() => {
     const map = new Map(
       (allProgressData?.items ?? []).map((item) => [item.questionId, item]),
@@ -99,30 +89,46 @@ export default function CodingChallengesPage() {
   }, [allProgressData?.items]);
 
   const countsByStatus = useMemo(() => {
-    const base: Partial<Record<UserProgressStatus, number>> =
-      progressFilters?.countsByStatus ?? allProgressData?.filters.countsByStatus ?? {};
-    const total = data?.total ?? 0;
-    const tracked =
-      (base.Attempted ?? 0) +
-      (base.Solved ?? 0) +
-      (base.Revised ?? 0) +
-      (base.Mastered ?? 0);
+    const base =
+      progressFilters?.countsByStatus ??
+      allProgressData?.filters.countsByStatus;
+
+    if (base) {
+      return {
+        'Not Started': base['Not Started'] ?? 0,
+        Attempted: base.Attempted ?? 0,
+        Solved: base.Solved ?? 0,
+        Revised: base.Revised ?? 0,
+        Mastered: base.Mastered ?? 0,
+      } satisfies Record<UserProgressStatus, number>;
+    }
 
     return {
-      'Not Started': Math.max(0, total - tracked),
-      Attempted: base.Attempted ?? 0,
-      Solved: base.Solved ?? 0,
-      Revised: base.Revised ?? 0,
-      Mastered: base.Mastered ?? 0,
+      'Not Started': 0,
+      Attempted: 0,
+      Solved: 0,
+      Revised: 0,
+      Mastered: 0,
     } satisfies Record<UserProgressStatus, number>;
-  }, [progressFilters, allProgressData, data?.total]);
+  }, [progressFilters, allProgressData?.filters.countsByStatus]);
 
   const completedCount =
     countsByStatus.Solved + countsByStatus.Revised + countsByStatus.Mastered;
 
+  const progressItemsForList = useMemo(() => {
+    if (!usesProgressList) return [];
+    const items = allProgressData?.items ?? [];
+    if (progressStatus === 'all') return items;
+    return items.filter((item) => item.status === progressStatus);
+  }, [allProgressData?.items, usesProgressList, progressStatus]);
+
   const questions = useMemo(() => {
-    if (usesProgressList && progressData) {
-      return progressData.items.map((item) => mapProgressItemToRow(item));
+    if (usesProgressList) {
+      const pagedItems = progressItemsForList.slice(
+        (page - 1) * PAGE_SIZE,
+        page * PAGE_SIZE,
+      );
+      return pagedItems.map((item) => mapProgressItemToRow(item));
     }
 
     if (!data?.items) return [];
@@ -141,7 +147,7 @@ export default function CodingChallengesPage() {
     });
   }, [
     usesProgressList,
-    progressData,
+    progressItemsForList,
     data?.items,
     notStartedMode,
     page,
@@ -154,7 +160,7 @@ export default function CodingChallengesPage() {
   }, [data?.items, notStartedMode, progressByQuestionId]);
 
   const totalPages = usesProgressList
-    ? (progressData?.meta.totalPages ?? 1)
+    ? Math.max(1, Math.ceil(progressItemsForList.length / PAGE_SIZE))
     : notStartedMode
       ? Math.max(1, Math.ceil(notStartedTotal / PAGE_SIZE))
       : (data?.totalPages ?? Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE)));
@@ -206,6 +212,13 @@ export default function CodingChallengesPage() {
     [filters?.difficulties],
   );
 
+  const totalItems =
+    usesProgressList
+      ? progressItemsForList.length
+      : notStartedMode
+        ? notStartedTotal
+        : (data?.total ?? 0);
+
   function handlePickRandom() {
     if (questions.length === 0) return;
     const pick = questions[Math.floor(Math.random() * questions.length)];
@@ -235,8 +248,9 @@ export default function CodingChallengesPage() {
           <button
             type="button"
             onClick={() => setShowFilters((value) => !value)}
-            className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
           >
+            <FilterIcon className="size-4" />
             Filters
             {hasActiveFilters
               ? ` (${selectedTags.length + (category !== 'all' ? 1 : 0) + (difficulty !== 'all' ? 1 : 0) + (progressStatus !== 'all' ? 1 : 0)})`
@@ -252,19 +266,10 @@ export default function CodingChallengesPage() {
         </div>
       </div>
 
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <StatCard label="Solved Problems" value={String(completedCount)} icon={<CheckIcon />} />
-        <StatCard label="Total Problems" value={String(data?.total ?? 0)} icon={<FlameIcon />} />
-        <StatCard
-          label="Attempted"
-          value={String(countsByStatus.Attempted)}
-          icon={<ClockIcon className="size-5" />}
-        />
-      </div>
-
-      <div className="mb-6">
+      <div className="mb-4 grid items-stretch gap-3 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <ProgressOverview
           totalProblems={data?.total ?? 0}
+          solvedCount={completedCount}
           countsByStatus={countsByStatus}
           selectedStatus={progressStatus}
           onStatusChange={(status) => {
@@ -272,89 +277,97 @@ export default function CodingChallengesPage() {
             setPage(1);
           }}
         />
+        <DailyActivityCalendar />
       </div>
 
-      <div className="mb-4 space-y-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setPage(1);
-            }}
-            placeholder="Filter by title, number, or pattern..."
-            className="w-full max-w-md rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none transition-colors focus:border-accent"
-          />
-          <button
-            type="button"
-            onClick={() => setShowRoadmapModal(true)}
-            className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-          >
-            Update Roadmap
-          </button>
-        </div>
-
-        {showFilters ? (
-          <div className="space-y-4 rounded-2xl border border-border bg-card p-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <Select
-                value={category}
-                onChange={(value) => {
-                  setCategory(value);
-                  setPage(1);
-                }}
-                options={categoryOptions}
-              />
-              <Select
-                value={difficulty}
-                onChange={(value) => {
-                  setDifficulty(value);
-                  setPage(1);
-                }}
-                options={difficultyOptions}
-              />
-              {hasActiveFilters ? (
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  className="rounded-xl border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  Clear filters
-                </button>
-              ) : null}
-            </div>
-
-            {filters?.tags.length ? (
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Tags
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {filters.tags.map((tag) => {
-                    const isSelected = selectedTags.includes(tag);
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => handleToggleTag(tag)}
-                        className={`tag-badge tag-badge-${getHighlightTone(tag)} rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide transition-opacity ${
-                          isSelected ? 'ring-2 ring-accent ring-offset-2 ring-offset-card' : 'opacity-80 hover:opacity-100'
-                        }`}
-                      >
-                        {tag}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+      {showFilters ? (
+        <div className="mb-4 space-y-4 rounded-2xl border border-border bg-card p-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Select
+              value={category}
+              onChange={(value) => {
+                setCategory(value);
+                setPage(1);
+              }}
+              options={categoryOptions}
+            />
+            <Select
+              value={difficulty}
+              onChange={(value) => {
+                setDifficulty(value);
+                setPage(1);
+              }}
+              options={difficultyOptions}
+            />
+            {hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="rounded-xl border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                Clear filters
+              </button>
             ) : null}
           </div>
-        ) : null}
-      </div>
+
+          {filters?.tags.length ? (
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Tags
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {filters.tags.map((tag) => {
+                  const isSelected = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleToggleTag(tag)}
+                      className={`rounded-full border border-emerald-500/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-600 transition-opacity dark:text-emerald-400 ${
+                        isSelected
+                          ? 'bg-emerald-500/10 ring-2 ring-emerald-500 ring-offset-2 ring-offset-card'
+                          : 'opacity-80 hover:opacity-100'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <DataTable
         columns={TABLE_COLUMNS}
+        toolbar={
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Filter by title..."
+                className="w-full min-w-[220px] max-w-sm rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-accent"
+              />
+              <button
+                type="button"
+                onClick={() => setShowRoadmapModal(true)}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <RefreshIcon className="size-4" />
+                Update Roadmap
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Showing {questions.length} of {totalItems} entries
+            </p>
+          </div>
+        }
         isLoading={usesProgressList ? isProgressLoading : isLoading}
         isError={usesProgressList ? isProgressError : isError}
         isFetching={usesProgressList ? isProgressFetching : isFetching}
@@ -371,13 +384,7 @@ export default function CodingChallengesPage() {
             currentPage={currentPage}
             totalPages={totalPages}
             pageSize={PAGE_SIZE}
-            totalItems={
-              usesProgressList
-                ? (progressData?.meta.total ?? 0)
-                : notStartedMode
-                  ? notStartedTotal
-                  : (data?.total ?? 0)
-            }
+            totalItems={totalItems}
             onPageChange={setPage}
           />
         }
@@ -417,7 +424,7 @@ function mapProgressItemToRow(item: UserProgressItem): ChallengeRow {
     slug: titleToSlug(item.question.title),
     number: item.questionId,
     title: item.question.title,
-    summary: `${item.attempts} attempt${item.attempts === 1 ? '' : 's'} · confidence ${item.confidence}`,
+    summary: `${item.question.category} · ${item.status}`,
     category: item.question.category,
     categorySlug: categoryToSlug(item.question.category),
     pattern: '—',
@@ -437,6 +444,10 @@ function mapProblemItemToRow(
   item: ProblemListItem,
   progress?: UserProgressItem,
 ): ChallengeRow {
+  const attempts = progress?.attempts ?? item.attempts ?? 0;
+  const confidence = progress?.confidence ?? item.confidence ?? 1;
+  const status = progress?.status ?? mapProblemStatus(item.status);
+
   return {
     slug: item.slug,
     number: item.id,
@@ -451,56 +462,49 @@ function mapProblemItemToRow(
     expectedSpaceComplexity: item.expectedSpaceComplexity,
     testcaseCount: item.testcaseCount,
     sampleTestcaseCount: item.sampleTestcaseCount,
-    status: progress?.status ?? 'Not Started',
-    attempts: progress?.attempts,
-    confidence: progress?.confidence,
+    status,
+    attempts,
+    confidence,
   };
 }
 
+function mapProblemStatus(status: ProblemListItem['status']): UserProgressStatus {
+  if (status === 'solved') return 'Solved';
+  if (status === 'in_progress') return 'Attempted';
+  return 'Not Started';
+}
+
 function QuestionRow({ question }: { question: ChallengeRow }) {
+  const testsLabel = formatTestsLabel(question);
+
   return (
-    <tr className="border-b border-border last:border-b-0 hover:bg-muted/40">
+    <tr className="border-b border-border last:border-b-0 hover:bg-muted/30">
       <td className="px-4 py-4">
         <StatusIcon status={question.status} />
       </td>
       <td className="px-4 py-4">
-        <Link href={`/code/${question.number}`} className="group block">
+        <Link href={`/code/${question.number}`} className="group block min-w-[220px]">
           <p className="font-semibold text-foreground group-hover:text-accent">
             {question.number}. {question.title}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">{question.summary}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5 md:hidden">
-            <CategoryBadge category={question.category} categorySlug={question.categorySlug} />
-            <TagBadges tags={question.tags} />
-          </div>
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+            {question.summary}
+          </p>
         </Link>
       </td>
       <td className="hidden px-4 py-4 md:table-cell">
-        <CategoryBadge category={question.category} categorySlug={question.categorySlug} />
+        <CategoryBadge category={question.category} />
       </td>
-      <td className="hidden px-4 py-4 md:table-cell">
+      <td className="hidden px-4 py-4 lg:table-cell">
         <TagBadges tags={question.tags} />
-      </td>
-      <td className="hidden px-4 py-4 text-xs text-muted-foreground lg:table-cell">
-        <p>{question.pattern}</p>
-        <p className="mt-1 text-[10px] text-muted-foreground/80">
-          {question.expectedTimeComplexity} · {question.expectedSpaceComplexity}
-        </p>
       </td>
       <td className="px-4 py-4">
         <DifficultyBadge difficulty={question.difficulty} />
       </td>
-      <td className="hidden px-4 py-4 text-xs text-muted-foreground lg:table-cell">
-        {question.attempts ?? '—'}
+      <td className="hidden px-4 py-4 text-sm font-medium text-muted-foreground sm:table-cell">
+        {testsLabel}
       </td>
-      <td className="hidden px-4 py-4 text-xs text-muted-foreground lg:table-cell">
-        {formatConfidence(question.confidence)}
-      </td>
-      <td className="hidden px-4 py-4 text-xs text-muted-foreground sm:table-cell">
-        <p className="font-medium text-foreground">{question.testcaseCount} tests</p>
-        <p className="mt-1">{question.sampleTestcaseCount} sample</p>
-      </td>
-      <td className="px-4 py-4">
+      <td className="px-4 py-4 text-right">
         <Link
           href={`/code/${question.number}`}
           className="inline-flex size-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-accent hover:bg-accent hover:text-accent-foreground dark:hover:text-black"
@@ -513,10 +517,18 @@ function QuestionRow({ question }: { question: ChallengeRow }) {
   );
 }
 
-function formatConfidence(value?: number) {
-  if (value === undefined) return '—';
-  if (value <= 1) return `${Math.round(value * 100)}%`;
-  return `${value}%`;
+function formatTestsLabel(question: ChallengeRow) {
+  const total = question.testcaseCount || 0;
+  if (total === 0) return '—';
+
+  const passed =
+    question.status === 'Solved' ||
+    question.status === 'Mastered' ||
+    question.status === 'Revised'
+      ? total
+      : 0;
+
+  return `${passed}/${total}`;
 }
 
 function StatusIcon({ status }: { status: UserProgressStatus }) {
@@ -551,15 +563,11 @@ function StatusIcon({ status }: { status: UserProgressStatus }) {
   return <span className="inline-block size-6 rounded-full border-2 border-border" />;
 }
 
-function CategoryBadge({
-  category,
-  categorySlug,
-}: {
-  category: string;
-  categorySlug: string;
-}) {
+function CategoryBadge({ category }: { category: string }) {
   return (
-    <HighlightBadge label={category} toneKey={categorySlug} variant="category" />
+    <span className="inline-flex max-w-[10rem] truncate rounded-md bg-blue-500/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+      {category}
+    </span>
   );
 }
 
@@ -569,59 +577,17 @@ function TagBadges({ tags }: { tags: string[] }) {
   }
 
   return (
-    <div className="flex max-w-[14rem] flex-wrap gap-1.5">
+    <div className="flex max-w-[12rem] flex-wrap gap-1.5">
       {tags.map((tag) => (
-        <TagBadge key={tag} tag={tag} />
+        <span
+          key={tag}
+          className="inline-flex rounded-md border border-emerald-500/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-400"
+        >
+          {tag}
+        </span>
       ))}
     </div>
   );
-}
-
-function TagBadge({ tag }: { tag: string }) {
-  return <HighlightBadge label={tag} toneKey={tag} variant="tag" />;
-}
-
-function HighlightBadge({
-  label,
-  toneKey,
-  variant,
-}: {
-  label: string;
-  toneKey: string;
-  variant: 'category' | 'tag';
-}) {
-  const tone = getHighlightTone(toneKey);
-
-  return (
-    <span
-      className={`${variant}-badge ${variant}-badge-${tone} inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide`}
-    >
-      {label}
-    </span>
-  );
-}
-
-function getHighlightTone(key: string) {
-  const tones = [
-    'emerald',
-    'sky',
-    'violet',
-    'amber',
-    'rose',
-    'cyan',
-    'indigo',
-    'orange',
-    'fuchsia',
-    'lime',
-    'teal',
-  ] as const;
-
-  let hash = 0;
-  for (let index = 0; index < key.length; index += 1) {
-    hash = (hash + key.charCodeAt(index) * (index + 1)) % tones.length;
-  }
-
-  return tones[hash] ?? 'emerald';
 }
 
 function DifficultyBadge({ difficulty }: { difficulty: CodeQuestion['difficulty'] }) {
@@ -638,17 +604,11 @@ function DifficultyBadge({ difficulty }: { difficulty: CodeQuestion['difficulty'
   );
 }
 
-function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+function FilterIcon({ className }: { className?: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
-        </div>
-        <div className="rounded-xl bg-muted p-2 text-accent">{icon}</div>
-      </div>
-    </div>
+    <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+    </svg>
   );
 }
 
@@ -673,14 +633,6 @@ function PlayIcon() {
   return (
     <svg aria-hidden viewBox="0 0 24 24" fill="currentColor" className="size-3.5">
       <path d="M8 5v14l11-7z" />
-    </svg>
-  );
-}
-
-function FlameIcon() {
-  return (
-    <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1.5-3C8 8 8 6 9 4c0 3 2 4 2 6 1-1 3-1 4 1 2 3 1 6-1.5 8.5" />
     </svg>
   );
 }

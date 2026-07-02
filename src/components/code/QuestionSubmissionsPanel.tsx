@@ -114,7 +114,7 @@ export default function QuestionSubmissionsPanel({
                 <span>
                   Memory:{' '}
                   <span className="font-medium text-foreground">
-                    {submission.memoryUsed} KB
+                    {submission.memoryUsed ?? 0} KB
                   </span>
                 </span>
                 <span>

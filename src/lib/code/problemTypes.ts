@@ -27,6 +27,8 @@ export type ProblemListItem = {
   followUpCount: number;
   exampleCount: number;
   status: QuestionStatus;
+  attempts: number;
+  confidence: number;
 };
 
 export type ProblemListResponse = {

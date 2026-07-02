@@ -1,6 +1,7 @@
 import type { BulkUploadPayload, BulkUploadResponse } from '@/lib/code/bulkUpload';
 import type { QuestionSubmissionPayload } from '@/lib/code/submissionMapper';
 import type {
+  QuestionSubmission,
   QuestionSubmissionsParams,
   QuestionSubmissionsResponse,
 } from '@/lib/code/submissionTypes';
@@ -92,7 +93,7 @@ export const problemsApi = apiSlice.injectEndpoints({
       ],
     }),
     submitQuestion: builder.mutation<
-      unknown,
+      QuestionSubmission,
       { questionId: number | string; body: QuestionSubmissionPayload }
     >({
       query: ({ questionId, body }) => ({

@@ -1,4 +1,6 @@
 import type {
+  DailyActivityParams,
+  DailyActivityResponse,
   UserProgressFiltersResponse,
   UserProgressParams,
   UserProgressResponse,
@@ -7,8 +9,6 @@ import { apiSlice } from './apiSlice';
 
 export function buildUserProgressQueryString(params: UserProgressParams = {}) {
   const searchParams = new URLSearchParams();
-  searchParams.set('page', String(params.page ?? 1));
-  searchParams.set('limit', String(params.limit ?? 20));
   if (params.status && params.status !== 'all') {
     searchParams.set('status', params.status);
   }
@@ -24,12 +24,16 @@ export const userProgressApi = apiSlice.injectEndpoints({
     getUserProgress: builder.query<UserProgressResponse, UserProgressParams>({
       query: (params) => {
         const query = buildUserProgressQueryString(params);
-        return `/user-progress?${query}`;
+        return query ? `/user-progress?${query}` : '/user-progress';
       },
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
         const query = buildUserProgressQueryString(queryArgs ?? {});
         return `${endpointName}?${query}`;
       },
+      providesTags: ['UserProgress'],
+    }),
+    getDailyActivity: builder.query<DailyActivityResponse, DailyActivityParams>({
+      query: ({ month }) => `/user-progress/daily-activity?month=${month}`,
       providesTags: ['UserProgress'],
     }),
   }),
@@ -38,4 +42,5 @@ export const userProgressApi = apiSlice.injectEndpoints({
 export const {
   useGetUserProgressFiltersQuery,
   useGetUserProgressQuery,
+  useGetDailyActivityQuery,
 } = userProgressApi;

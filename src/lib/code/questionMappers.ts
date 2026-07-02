@@ -55,6 +55,12 @@ export type RemoteQuestion = {
   hints: string[];
   testcaseCount: number;
   sampleTestcaseCount: number;
+  userProgress?: {
+    status: string;
+    attempts: number;
+    confidence: number;
+    lastAttemptedAt?: string;
+  };
   updatedAt: string;
   createdAt?: string;
 };
@@ -266,6 +272,7 @@ export function mapRemoteQuestionDetailToCodeQuestion(
 
 export function mapRemoteQuestionToListItem(question: RemoteQuestion): ProblemListItem {
   const slug = titleToSlug(question.title);
+  const progress = question.userProgress;
 
   return {
     id: question.questionId,
@@ -285,8 +292,23 @@ export function mapRemoteQuestionToListItem(question: RemoteQuestion): ProblemLi
     hintCount: question.hints?.length ?? 0,
     followUpCount: question.followUps?.length ?? 0,
     exampleCount: question.examples?.length ?? 0,
-    status: 'not_started',
+    status: mapRemoteProgressStatus(progress?.status),
+    attempts: progress?.attempts ?? 0,
+    confidence: progress?.confidence ?? 1,
   };
+}
+
+function mapRemoteProgressStatus(status?: string): QuestionStatus {
+  switch (status) {
+    case 'Solved':
+    case 'Revised':
+    case 'Mastered':
+      return 'solved';
+    case 'Attempted':
+      return 'in_progress';
+    default:
+      return 'not_started';
+  }
 }
 
 export function mapRemoteQuestionsResponse(response: RemoteQuestionsResponse) {

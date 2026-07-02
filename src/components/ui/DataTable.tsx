@@ -11,6 +11,7 @@ export type DataTableColumn = {
 type DataTableProps = {
   columns: DataTableColumn[];
   children: ReactNode;
+  toolbar?: ReactNode;
   isLoading?: boolean;
   isError?: boolean;
   isFetching?: boolean;
@@ -25,6 +26,7 @@ type DataTableProps = {
 export default function DataTable({
   columns,
   children,
+  toolbar,
   isLoading = false,
   isError = false,
   isFetching = false,
@@ -39,6 +41,9 @@ export default function DataTable({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      {toolbar ? (
+        <div className="border-b border-border">{toolbar}</div>
+      ) : null}
       <div className="overflow-x-auto">
         <table className="min-w-full text-left text-sm">
           <thead className="border-b border-border bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">

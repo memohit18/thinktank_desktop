@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import CodeEditor from '@/components/code/CodeEditor';
 import QuestionSubmissionsPanel from '@/components/code/QuestionSubmissionsPanel';
+import QuestionTestResultsPanel from '@/components/code/QuestionTestResultsPanel';
 import { useToast } from '@/components/ui/Toast';
 import { useProblemProgress } from '@/hooks/useProblemProgress';
 import {
@@ -17,15 +18,23 @@ import {
 } from '@/lib/code/runPython';
 import { formatExpectedTestOutput } from '@/lib/code/testCaseComparison';
 import type { CodeQuestion } from '@/lib/code/questions';
-import { mapExecutionToSubmission } from '@/lib/code/submissionMapper';
+import { buildSubmissionPayload } from '@/lib/code/submissionMapper';
+import type { QuestionSubmission } from '@/lib/code/submissionTypes';
+import {
+  loadSubmissionTestResults,
+  saveSubmissionTestResults,
+} from '@/lib/code/submissionTestResultsStorage';
 import { getApiErrorMessage } from '@/lib/services/getApiErrorMessage';
-import { useSubmitQuestionMutation } from '@/lib/services/problemsApi';
+import {
+  useGetQuestionSubmissionsQuery,
+  useSubmitQuestionMutation,
+} from '@/lib/services/problemsApi';
 
 type CodeWorkspaceProps = {
   question: CodeQuestion;
 };
 
-type LeftPanelTab = 'question' | 'submissions';
+type LeftPanelTab = 'question' | 'submissions' | 'test-results';
 
 function difficultyClass(difficulty: CodeQuestion['difficulty']) {
   if (difficulty === 'Easy') return 'difficulty-easy';
@@ -53,6 +62,23 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
   const [runtimeError, setRuntimeError] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [leftPanel, setLeftPanel] = useState<LeftPanelTab>('question');
+  const [latestTestResults, setLatestTestResults] =
+    useState<Pick<
+      QuestionSubmission,
+      | 'submissionId'
+      | 'status'
+      | 'passedTestCases'
+      | 'totalTestCases'
+      | 'failureReason'
+      | 'testCases'
+    > | null>(null);
+
+  const { data: submissionsPreview } = useGetQuestionSubmissionsQuery(
+    { questionId: question.number, page: 1, limit: 1 },
+    { refetchOnMountOrArgChange: true },
+  );
+  const hasSubmitted = (submissionsPreview?.meta.total ?? 0) > 0;
+  const isTestResultsUnlocked = hasSubmitted || Boolean(latestTestResults?.testCases?.length);
 
   const activeCase = question.testCases[activeCaseIndex];
 
@@ -61,8 +87,9 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
     setResult(null);
     setActiveCaseIndex(0);
     setLeftPanel('question');
+    setLatestTestResults(loadSubmissionTestResults(question.number));
     updateStatus(question.slug, 'in_progress');
-  }, [question.id, question.slug, question.starterCode, updateStatus]);
+  }, [question.id, question.number, question.slug, question.starterCode, updateStatus]);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,32 +155,52 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
     }
   }
 
-  async function recordSubmission(executionResult: ExecutionResult) {
-    const submission = mapExecutionToSubmission(
-      code,
-      'python',
-      executionResult,
-      question.testCases.length,
-    );
+  async function recordSubmission() {
+    const submission = buildSubmissionPayload(code, 'python');
 
     try {
-      await submitQuestion({
+      const result = await submitQuestion({
         questionId: question.number,
         body: submission,
       }).unwrap();
 
-      if (submission.status === 'Accepted') {
+      const testResultSnapshot = {
+        submissionId: result.submissionId,
+        status: result.status,
+        passedTestCases: result.passedTestCases,
+        totalTestCases: result.totalTestCases,
+        failureReason: result.failureReason,
+        testCases: result.testCases,
+      };
+
+      setLatestTestResults(testResultSnapshot);
+      saveSubmissionTestResults(question.number, result);
+
+      if (result.status === 'Accepted') {
         showToast('Submission accepted!');
       } else {
-        showToast(`Submission recorded: ${submission.status}`, 'error');
+        showToast(`Submission recorded: ${result.status}`, 'error');
       }
-      setLeftPanel('submissions');
+
+      setLeftPanel(result.testCases?.length ? 'test-results' : 'submissions');
     } catch (error) {
       showToast(
         getApiErrorMessage(error, 'Failed to submit solution.'),
         'error',
       );
     }
+  }
+
+  function handleTestResultsTabClick() {
+    if (!isTestResultsUnlocked) {
+      showToast(
+        'Submit your solution at least once to view all test case results.',
+        'error',
+      );
+      return;
+    }
+
+    setLeftPanel('test-results');
   }
 
   async function handleSubmit() {
@@ -164,7 +211,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
     try {
       const executionResult = await executePython(code, question.testCases);
       setResult(executionResult);
-      await recordSubmission(executionResult);
+      await recordSubmission();
 
       const passed =
         !executionResult.compileError &&
@@ -186,7 +233,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
         executionTimeMs: 0,
       };
       setResult(executionResult);
-      await recordSubmission(executionResult);
+      await recordSubmission();
     } finally {
       setIsRunning(false);
     }
@@ -270,6 +317,13 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
               onClick={() => setLeftPanel('submissions')}
             >
               Submissions
+            </PanelTab>
+            <PanelTab
+              active={leftPanel === 'test-results'}
+              locked={!isTestResultsUnlocked}
+              onClick={handleTestResultsTabClick}
+            >
+              Test Results
             </PanelTab>
           </div>
         </div>
@@ -399,11 +453,19 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
             </div>
           ) : null}
             </>
-          ) : (
+          ) : leftPanel === 'submissions' ? (
             <QuestionSubmissionsPanel
               questionId={question.number}
               active={leftPanel === 'submissions'}
               onLoadCode={handleLoadSubmissionCode}
+            />
+          ) : (
+            <QuestionTestResultsPanel
+              status={latestTestResults?.status ?? '—'}
+              passedTestCases={latestTestResults?.passedTestCases ?? 0}
+              totalTestCases={latestTestResults?.totalTestCases ?? 0}
+              failureReason={latestTestResults?.failureReason}
+              testCases={latestTestResults?.testCases ?? []}
             />
           )}
         </div>
@@ -672,10 +734,12 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
 
 function PanelTab({
   active,
+  locked = false,
   onClick,
   children,
 }: {
   active: boolean;
+  locked?: boolean;
   onClick: () => void;
   children: ReactNode;
 }) {
@@ -683,13 +747,17 @@ function PanelTab({
     <button
       type="button"
       onClick={onClick}
-      className={`border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+      aria-disabled={locked}
+      className={`inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
         active
           ? 'border-accent text-foreground'
-          : 'border-transparent text-muted-foreground hover:text-foreground'
+          : locked
+            ? 'cursor-not-allowed border-transparent text-muted-foreground/60'
+            : 'border-transparent text-muted-foreground hover:text-foreground'
       }`}
     >
       {children}
+      {locked ? <LockIcon className="size-3.5 opacity-70" /> : null}
     </button>
   );
 }
@@ -807,6 +875,15 @@ function SubmitIcon({ className }: { className?: string }) {
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" x2="12" y1="3" y2="15" />
+    </svg>
+  );
+}
+
+function LockIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   );
 }
