@@ -26,6 +26,14 @@ export const DEFAULT_PORTAL_SETTINGS: PortalSettings = {
       description: 'DSA practice track with editor and submissions.',
       visible: true,
     },
+    {
+      id: 'nav-fitforge',
+      moduleId: 'fitforge',
+      label: 'FitForge',
+      href: '/fitforge',
+      description: 'AI diet planner, nutrition, workouts, and coaching.',
+      visible: true,
+    },
   ],
   modules: [
     {
@@ -39,6 +47,13 @@ export const DEFAULT_PORTAL_SETTINGS: PortalSettings = {
       id: 'coding-challenges',
       name: 'Coding Challenges',
       description: 'Problem list, editor, roadmaps, and progress.',
+      enabled: true,
+      viewMode: 'desktop',
+    },
+    {
+      id: 'fitforge',
+      name: 'FitForge',
+      description: 'Diet planner, nutrition tracking, and AI fitness coaching.',
       enabled: true,
       viewMode: 'desktop',
     },

@@ -131,6 +131,10 @@ function NavIcon({
     return <DashboardIcon className={className} />;
   }
 
+  if (icon === 'fitforge') {
+    return <FitForgeIcon className={className} />;
+  }
+
   return <ProjectsIcon className={className} />;
 }
 
@@ -151,6 +155,18 @@ function ProjectsIcon({ className }: { className?: string }) {
       <path d="M3 7h18" />
       <path d="M3 12h18" />
       <path d="M3 17h18" />
+    </svg>
+  );
+}
+
+function FitForgeIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <path d="M12 3v18" />
+      <path d="M8 7h8" />
+      <path d="M7 12h10" />
+      <path d="M9 17h6" />
+      <circle cx="12" cy="12" r="9" />
     </svg>
   );
 }

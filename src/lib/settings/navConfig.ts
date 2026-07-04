@@ -1,6 +1,6 @@
 import type { SidebarNavItemConfig } from '@/lib/settings/types';
 
-export type NavIconId = 'dashboard' | 'coding-challenges';
+export type NavIconId = 'dashboard' | 'coding-challenges' | 'fitforge';
 
 export type AppNavItem = SidebarNavItemConfig & {
   icon: NavIconId;
@@ -25,11 +25,24 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     visible: true,
     icon: 'coding-challenges',
   },
+  {
+    id: 'nav-fitforge',
+    moduleId: 'fitforge',
+    label: 'FitForge',
+    href: '/fitforge',
+    description: 'AI diet planner, nutrition, workouts, and coaching.',
+    visible: true,
+    icon: 'fitforge',
+  },
 ];
 
 export function isNavItemActive(pathname: string, href: string) {
   if (href === '/code') {
     return pathname === '/code' || pathname.startsWith('/code/');
+  }
+
+  if (href === '/fitforge') {
+    return pathname === '/fitforge' || pathname.startsWith('/fitforge/');
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);

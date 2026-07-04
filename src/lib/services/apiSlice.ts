@@ -61,6 +61,6 @@ const baseQuery: BaseQueryFn<
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery,
-  tagTypes: ['Auth', 'CodeSession', 'QuestionFilters', 'Problems', 'Profile', 'Submissions', 'UserProgress', 'Roadmaps'],
+  tagTypes: ['Auth', 'CodeSession', 'QuestionFilters', 'Problems', 'Profile', 'Submissions', 'UserProgress', 'Roadmaps', 'FitForge', 'FitnessProfile', 'PhysiqueGoals'],
   endpoints: () => ({}),
 });
