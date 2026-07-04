@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { SubmissionTestCaseResult } from '@/lib/code/submissionTypes';
+import { formatDisplayValue } from '@/lib/code/formatDisplayValue';
 
 type QuestionTestResultsPanelProps = {
   status: string;
@@ -10,18 +11,6 @@ type QuestionTestResultsPanelProps = {
   failureReason?: string;
   testCases: SubmissionTestCaseResult[];
 };
-
-function formatValue(value: unknown) {
-  if (value === undefined || value === null) {
-    return '—';
-  }
-
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  return JSON.stringify(value, null, 2);
-}
 
 function testcaseStatusClass(status: SubmissionTestCaseResult['status']) {
   if (status === 'passed') return 'text-accent';
@@ -63,18 +52,20 @@ export default function QuestionTestResultsPanel({
 
   if (testCases.length === 0) {
     return (
-      <div className="py-12 text-center">
+      <div className="flex h-full items-center justify-center py-12 text-center">
+        <div>
         <p className="text-sm font-medium text-foreground">No test results yet</p>
         <p className="mt-1 text-sm text-muted-foreground">
           Submit your solution again to load detailed test case results.
         </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-border bg-muted/30 p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="shrink-0 rounded-xl border border-border bg-muted/30 p-2.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-foreground">{status}</p>
@@ -94,9 +85,9 @@ export default function QuestionTestResultsPanel({
         ) : null}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="flex min-h-[320px]">
-          <div className="w-32 shrink-0 space-y-1 border-r border-border p-2">
+      <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
+        <div className="flex h-full min-h-0">
+          <div className="w-20 shrink-0 space-y-1 overflow-y-auto border-r border-border p-2">
             {testCases.map((testCase, index) => {
               const isActive = activeIndex === index;
 
@@ -105,7 +96,7 @@ export default function QuestionTestResultsPanel({
                   key={testCase.index}
                   type="button"
                   onClick={() => setActiveIndex(index)}
-                  className={`flex w-full flex-col gap-1 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-colors ${
+                  className={`flex w-full flex-col gap-1 rounded-lg px-2 py-1.5 text-left text-[10px] font-medium transition-colors ${
                     isActive
                       ? 'bg-muted text-foreground'
                       : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -134,7 +125,7 @@ export default function QuestionTestResultsPanel({
           </div>
 
           {activeCase ? (
-            <div className="min-w-0 flex-1 space-y-4 overflow-y-auto p-4">
+            <div className="min-w-0 flex-1 space-y-2.5 overflow-y-auto p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p
                   className={`text-sm font-semibold ${testcaseStatusClass(activeCase.status)}`}
@@ -146,7 +137,7 @@ export default function QuestionTestResultsPanel({
                 </p>
               </div>
 
-              <ResultField label="Input" value={formatValue(activeCase.input)} />
+              <ResultField label="Input" value={formatDisplayValue(activeCase.input)} />
               {activeCase.validationType === 'count_only' ? (
                 <ResultField
                   label="Expected Count"
@@ -155,12 +146,12 @@ export default function QuestionTestResultsPanel({
               ) : (
                 <ResultField
                   label="Expected Output"
-                  value={formatValue(activeCase.expectedOutput)}
+                  value={formatDisplayValue(activeCase.expectedOutput)}
                 />
               )}
               <ResultField
                 label="Your Output"
-                value={formatValue(activeCase.actualOutput)}
+                value={formatDisplayValue(activeCase.actualOutput)}
                 tone={activeCase.passed ? 'success' : 'error'}
               />
               {activeCase.message ? (
@@ -187,7 +178,7 @@ function ResultField({
     <div>
       <p className="mb-1.5 text-xs font-medium text-muted-foreground">{label}</p>
       <pre
-        className={`overflow-x-auto rounded-lg border p-3 font-mono text-xs leading-relaxed ${
+        className={`overflow-auto whitespace-pre-wrap wrap-break-word rounded-lg border p-2.5 font-mono text-[11px] leading-relaxed ${
           tone === 'success'
             ? 'border-accent/30 bg-accent/5 text-foreground'
             : tone === 'error'

@@ -13,14 +13,14 @@ export default function ProtectedShell({
 
   return (
     <div
-      className={`min-h-screen bg-background transition-[padding] duration-200 ${
-        pinned ? 'pl-64' : 'pl-[4.5rem]'
+      className={`h-screen overflow-hidden bg-background transition-[padding] duration-200 ${
+        pinned ? 'pl-64' : 'pl-18'
       }`}
     >
       <AppSidebar />
-      <div className="flex min-h-screen flex-col">
+      <div className="flex h-screen min-h-0 flex-col overflow-hidden">
         <AppHeader />
-        {children}
+        <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
       </div>
     </div>
   );

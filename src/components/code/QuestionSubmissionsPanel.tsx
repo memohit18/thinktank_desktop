@@ -53,37 +53,40 @@ export default function QuestionSubmissionsPanel({
 
   if (isLoading) {
     return (
-      <p className="py-8 text-center text-sm text-muted-foreground">
+      <div className="flex h-full items-center justify-center py-8 text-center text-sm text-muted-foreground">
         Loading submissions...
-      </p>
+      </div>
     );
   }
 
   if (isError) {
     return (
-      <p className="py-8 text-center text-sm text-red-500">
+      <div className="flex h-full items-center justify-center py-8 text-center text-sm text-red-500">
         Failed to load submissions.
-      </p>
+      </div>
     );
   }
 
   if (submissions.length === 0) {
     return (
-      <div className="py-12 text-center">
+      <div className="flex h-full items-center justify-center py-12 text-center">
+        <div>
         <p className="text-sm font-medium text-foreground">No submissions yet</p>
         <p className="mt-1 text-sm text-muted-foreground">
           Submit your solution to see it here.
         </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col">
       {isFetching && !isLoading ? (
-        <p className="text-center text-xs text-muted-foreground">Updating...</p>
+        <p className="mb-2 shrink-0 text-center text-xs text-muted-foreground">Updating...</p>
       ) : null}
 
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
       {submissions.map((submission) => {
         const isExpanded = expandedId === submission.submissionId;
 
@@ -163,9 +166,10 @@ export default function QuestionSubmissionsPanel({
           </div>
         );
       })}
+      </div>
 
       {totalPages > 1 ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="mt-3 shrink-0 overflow-hidden rounded-xl border border-border bg-card">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

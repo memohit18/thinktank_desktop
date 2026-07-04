@@ -16,6 +16,7 @@ import {
   preloadPyodide,
   type ExecutionResult,
 } from '@/lib/code/runPython';
+import { formatDisplayValue } from '@/lib/code/formatDisplayValue';
 import { formatExpectedTestOutput } from '@/lib/code/testCaseComparison';
 import type { CodeQuestion } from '@/lib/code/questions';
 import { buildSubmissionPayload } from '@/lib/code/submissionMapper';
@@ -224,7 +225,11 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
         showToast(`Submission recorded: ${result.status}`, 'error');
       }
 
-      setLeftPanel(result.testCases?.length ? 'test-results' : 'submissions');
+      // Keep the current left pane stable on submit to avoid layout shifts.
+      // The bottom testcase panel already updates immediately with fresh results.
+      if (leftPanel === 'test-results' && result.testCases?.length) {
+        setLeftPanel('test-results');
+      }
     } catch (error) {
       showToast(
         getApiErrorMessage(error, 'Failed to submit solution.'),
@@ -328,8 +333,8 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
-      <aside className="flex w-[min(36%,440px)] shrink-0 flex-col overflow-y-auto border-r border-border bg-card xl:w-[min(40%,500px)]">
-        <div className="sticky top-0 z-10 border-b border-border bg-card px-4 pt-4 lg:px-5 lg:pt-5">
+      <aside className="flex min-h-0 w-[min(34%,410px)] shrink-0 flex-col overflow-hidden border-r border-border bg-card xl:w-[min(37%,450px)]">
+        <div className="shrink-0 border-b border-border bg-card px-4 pt-4 lg:px-5 lg:pt-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <h1 className="text-xl font-bold tracking-tight text-foreground lg:text-2xl">
               {question.number}. {question.title}
@@ -349,7 +354,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
             </div>
           </div>
 
-          <div className="mt-3 flex gap-1 border-b border-border">
+          <div className="mt-3 flex gap-0.5 border-b border-border">
             <PanelTab
               active={leftPanel === 'question'}
               onClick={() => setLeftPanel('question')}
@@ -372,10 +377,10 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
           </div>
         </div>
 
-        <div className="p-4 lg:p-5">
+        <div className="min-h-0 flex-1 overflow-hidden">
           {leftPanel === 'question' ? (
-            <>
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <div className="h-full overflow-y-auto p-4 lg:p-5">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
             {question.likes ? (
               <span className="inline-flex items-center gap-1.5">
                 <ThumbsUpIcon className="size-4" />
@@ -496,77 +501,83 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
               ))}
             </div>
           ) : null}
-            </>
+            </div>
           ) : leftPanel === 'submissions' ? (
-            <QuestionSubmissionsPanel
-              questionId={question.number}
-              active={leftPanel === 'submissions'}
-              onLoadCode={handleLoadSubmissionCode}
-            />
+            <div className="h-full overflow-hidden p-4 lg:p-5">
+              <QuestionSubmissionsPanel
+                questionId={question.number}
+                active={leftPanel === 'submissions'}
+                onLoadCode={handleLoadSubmissionCode}
+              />
+            </div>
           ) : (
-            <QuestionTestResultsPanel
-              status={latestTestResults?.status ?? '—'}
-              passedTestCases={latestTestResults?.passedTestCases ?? 0}
-              totalTestCases={latestTestResults?.totalTestCases ?? 0}
-              failureReason={latestTestResults?.failureReason}
-              testCases={latestTestResults?.testCases ?? []}
-            />
+            <div className="h-full overflow-hidden p-4 lg:p-5">
+              <QuestionTestResultsPanel
+                status={latestTestResults?.status ?? '—'}
+                passedTestCases={latestTestResults?.passedTestCases ?? 0}
+                totalTestCases={latestTestResults?.totalTestCases ?? 0}
+                failureReason={latestTestResults?.failureReason}
+                testCases={latestTestResults?.testCases ?? []}
+              />
+            </div>
           )}
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div
-          ref={editorRef}
-          className={`flex min-h-0 flex-[2.7] flex-col ${isFullscreen ? 'bg-[#1e1e1e]' : ''}`}
-        >
-          <div className="flex items-center justify-between border-b border-border bg-[#2d2d2d] px-3 py-2 lg:px-4 lg:py-2.5">
-            <div className="flex items-center gap-2 text-sm text-neutral-200">
-              <CodeIcon className="size-4 text-neutral-400" />
-              <span className="font-medium">solution.py</span>
+      <div className="grid min-w-0 flex-1 grid-rows-[minmax(0,1fr)_15rem] overflow-hidden xl:grid-rows-[minmax(0,1fr)_16rem]">
+        <div className="min-h-0 px-2 pt-2 lg:px-2 lg:pt-2">
+          <div
+            ref={editorRef}
+            className={`flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border/70 ${isFullscreen ? 'bg-[#1e1e1e]' : ''}`}
+          >
+            <div className="flex items-center justify-between border-b border-border bg-[#2d2d2d] px-3 py-1.5 lg:px-3.5 lg:py-1.5">
+              <div className="flex items-center gap-2 text-sm text-neutral-200">
+                <CodeIcon className="size-4 text-neutral-400" />
+                <span className="font-medium">solution.py</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-label="Reset to starter code"
+                  onClick={handleResetCode}
+                  className="flex size-8 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white/10 hover:text-neutral-200"
+                  title="Reset"
+                >
+                  <ResetIcon className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Editor settings"
+                  className="flex size-8 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white/10 hover:text-neutral-200"
+                >
+                  <SettingsIcon className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                  onClick={toggleFullscreen}
+                  className="flex size-8 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white/10 hover:text-neutral-200"
+                >
+                  <FullscreenIcon className="size-4" />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                aria-label="Reset to starter code"
-                onClick={handleResetCode}
-                className="flex size-8 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white/10 hover:text-neutral-200"
-                title="Reset"
-              >
-                <ResetIcon className="size-4" />
-              </button>
-              <button
-                type="button"
-                aria-label="Editor settings"
-                className="flex size-8 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white/10 hover:text-neutral-200"
-              >
-                <SettingsIcon className="size-4" />
-              </button>
-              <button
-                type="button"
-                aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-                onClick={toggleFullscreen}
-                className="flex size-8 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white/10 hover:text-neutral-200"
-              >
-                <FullscreenIcon className="size-4" />
-              </button>
+            <div className="min-h-0 flex-1 bg-[#1e1e1e]">
+              <CodeEditor value={code} onChange={setCode} alwaysDark />
             </div>
+            {runtimeError ? (
+              <p className="border-t border-border bg-card px-4 py-2 text-xs text-red-500">
+                {runtimeError}
+              </p>
+            ) : null}
           </div>
-          <div className="min-h-0 flex-1 bg-[#1e1e1e]">
-            <CodeEditor value={code} onChange={setCode} alwaysDark />
-          </div>
-          {runtimeError ? (
-            <p className="border-t border-border bg-card px-4 py-2 text-xs text-red-500">
-              {runtimeError}
-            </p>
-          ) : null}
         </div>
 
-        <div className="flex min-h-0 flex-[1.55] flex-col border-t border-border lg:flex-row">
-          <section className="flex min-h-0 min-w-0 flex-1 flex-col border-b border-border bg-card lg:border-b-0 lg:border-r">
-            <div className="border-b border-border px-3 py-2.5 lg:px-4 lg:py-3">
+        <div className="flex min-h-0 min-w-0 flex-col overflow-hidden border-t border-border lg:flex-row">
+          <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-b border-border bg-card lg:border-b-0 lg:border-r">
+            <div className="border-b border-border px-3 py-2 lg:px-3.5 lg:py-2.5">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-foreground">Testcases</p>
+                <p className="text-[13px] font-semibold text-foreground">Testcases</p>
                 <button
                   type="button"
                   disabled
@@ -576,12 +587,12 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                 </button>
               </div>
               {question.judging?.comparisonNote ? (
-                <p className="mt-2 text-xs text-muted-foreground">
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
                   {question.judging.comparisonNote}
                 </p>
               ) : null}
               {question.testcaseSummary ? (
-                <p className="mt-1 text-[11px] text-muted-foreground/80">
+                <p className="mt-1 text-[10px] text-muted-foreground/80">
                   {question.testcaseSummary.sample} sample ·{' '}
                   {question.testcaseSummary.hidden} hidden ·{' '}
                   {question.testcaseSummary.countOnly} count-only checks
@@ -589,8 +600,8 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
               ) : null}
             </div>
 
-            <div className="flex min-h-0 flex-1">
-              <div className="w-24 shrink-0 space-y-1 border-r border-border p-2 lg:w-28">
+            <div className="flex min-h-0 flex-1 overflow-hidden">
+              <div className="w-20 shrink-0 space-y-1 border-r border-border p-1.5 lg:w-24">
                 {question.testCases.map((testCase, index) => {
                   const testResult = result?.testResults.find(
                     (item) => item.id === testCase.id,
@@ -602,7 +613,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                       key={testCase.id}
                       type="button"
                       onClick={() => setActiveCaseIndex(index)}
-                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] font-medium transition-colors lg:px-2.5 lg:py-2 lg:text-xs ${
+                      className={`flex w-full items-center gap-1.5 rounded-lg px-1.5 py-1.5 text-left text-[10px] font-medium transition-colors lg:px-2 lg:text-[11px] ${
                         isActive
                           ? 'bg-muted text-foreground'
                           : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -625,86 +636,106 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                 })}
               </div>
 
-              <div className="min-w-0 flex-1 space-y-3 overflow-y-auto p-3 lg:space-y-4 lg:p-4">
+              <div className="min-w-0 flex-1 overflow-hidden p-2 lg:p-2.5">
                 {activeCase ? (
-                  <>
-                    {activeRunResult ? (
-                      <div
-                        className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-                          localResultTone(activeRunResult.status) === 'success'
-                            ? 'border-accent/30 bg-accent/5 text-accent'
-                            : localResultTone(activeRunResult.status) === 'warning'
-                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-600'
-                              : 'border-red-500/30 bg-red-500/10 text-red-500'
-                        }`}
-                      >
-                        {localResultStatusLabel(activeRunResult.status)}
-                      </div>
-                    ) : null}
-                    <Field label="Input" value={activeCase.input} />
-                    {activeCase.validationType === 'count_only' ? (
-                      <Field
-                        label="Validation"
-                        value="Count-only (order does not matter)"
-                      />
-                    ) : null}
-                    <Field
-                      label="Expected Output"
-                      value={formatExpectedTestOutput(activeCase)}
-                    />
-                    {result ? (
-                      <Field
-                        label="Your Output"
-                        value={activeRunResult?.actual ?? '—'}
-                        tone={
-                          activeRunResult
-                            ? localResultTone(activeRunResult.status)
-                            : undefined
-                        }
-                      />
-                    ) : null}
-                    {activeRunResult?.message ? (
-                      <Field
-                        label="Details"
-                        value={activeRunResult.message}
-                        tone={
-                          activeRunResult.status === 'passed'
-                            ? 'success'
-                            : activeRunResult.status === 'wrong_answer'
-                              ? 'error'
-                              : 'warning'
-                        }
-                      />
-                    ) : null}
-                  </>
+                  <div className="flex h-full min-h-0 flex-col gap-2">
+                    <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+                      {activeRunResult ? (
+                        <div
+                          className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                            localResultTone(activeRunResult.status) === 'success'
+                              ? 'border-accent/30 bg-accent/5 text-accent'
+                              : localResultTone(activeRunResult.status) === 'warning'
+                                ? 'border-amber-500/30 bg-amber-500/10 text-amber-600'
+                                : 'border-red-500/30 bg-red-500/10 text-red-500'
+                          }`}
+                        >
+                          {localResultStatusLabel(activeRunResult.status)}
+                        </div>
+                      ) : (
+                        <div />
+                      )}
+                      {result ? (
+                        <p className="text-[11px] text-muted-foreground">
+                          {result.executionTimeMs}ms
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-2">
+                      <Field label="Input" value={activeCase.input} />
+                      {activeCase.validationType === 'count_only' ? (
+                        <Field
+                          label="Validation"
+                          value="Count-only (order does not matter)"
+                        />
+                      ) : (
+                        <Field
+                          label="Expected Output"
+                          value={formatExpectedTestOutput(activeCase)}
+                        />
+                      )}
+                      {result ? (
+                        <Field
+                          label="Your Output"
+                          value={activeRunResult?.actual ?? '—'}
+                          tone={
+                            activeRunResult
+                              ? localResultTone(activeRunResult.status)
+                              : undefined
+                          }
+                        />
+                      ) : null}
+                      {activeCase.validationType === 'count_only' ? (
+                        <Field
+                          label="Expected Count"
+                          value={String(activeCase.expectedOutputCount ?? 0)}
+                        />
+                      ) : null}
+                      {activeRunResult?.message ? (
+                        <Field
+                          label="Details"
+                          value={activeRunResult.message}
+                          tone={
+                            activeRunResult.status === 'passed'
+                              ? 'success'
+                              : activeRunResult.status === 'wrong_answer'
+                                ? 'error'
+                                : 'warning'
+                          }
+                          spanFull
+                        />
+                      ) : null}
+                    </div>
+                  </div>
                 ) : null}
               </div>
             </div>
           </section>
 
-          <section className="flex w-full shrink-0 flex-col bg-card lg:w-72 xl:w-80">
-            <div className="border-b border-border px-3 py-2.5 lg:px-4 lg:py-3">
-              <p className="text-sm font-semibold text-foreground">
+          <section className="flex min-h-0 w-full shrink-0 flex-col overflow-hidden bg-card lg:w-52 xl:w-56">
+            <div className="border-b border-border px-3 py-2 lg:px-3.5 lg:py-2.5">
+              <p className="text-[13px] font-semibold text-foreground">
                 Performance
               </p>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col justify-between p-3 lg:p-4">
-              <div className="space-y-3 lg:space-y-4">
+            <div className="flex min-h-0 flex-1 flex-col p-2.5 lg:p-3">
+              <div className="min-h-0 flex-1 space-y-2.5 overflow-hidden pr-1">
                 {result ? (
                   <>
                     <div>
                       <p className="text-xs text-muted-foreground">
                         Execution Time
                       </p>
-                      <p className="mt-1 text-lg font-semibold text-accent">
+                      <p className="mt-1 text-sm font-semibold text-accent">
                         {result.executionTimeMs}ms
                       </p>
                     </div>
 
                     {beatsPercent !== null && !result.compileError ? (
                       <div>
-                        <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="mb-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
                           <span>Runtime percentile</span>
                           <span>{beatsPercent}%</span>
                         </div>
@@ -714,7 +745,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                             style={{ width: `${beatsPercent}%` }}
                           />
                         </div>
-                        <p className="mt-2 text-xs text-muted-foreground">
+                        <p className="mt-1.5 text-[11px] text-muted-foreground">
                           Beats {beatsPercent}% of users with Python3
                         </p>
                       </div>
@@ -727,7 +758,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                     ) : null}
 
                     {allPassed ? (
-                      <p className="text-xs font-medium text-accent">
+                      <p className="text-[11px] font-medium text-accent">
                         All test cases passed
                       </p>
                     ) : null}
@@ -745,7 +776,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                     ) : null}
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Run your code to see execution stats and results.
                   </p>
                 )}
@@ -762,13 +793,13 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                 </div>
               </div>
 
-              <div className="mt-3 space-y-2">
+              <div className="mt-2.5 shrink-0 space-y-2 border-t border-border/70 pt-2.5">
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={handleRunCode}
                     disabled={isRunning || !isRuntimeReady}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-muted px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-muted px-2.5 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <PlayIcon className="size-4" />
                     {isRunning
@@ -781,7 +812,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                     type="button"
                     onClick={handleSubmit}
                     disabled={isRunning || !isRuntimeReady}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2.5 text-sm font-semibold text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 dark:text-black"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent px-2.5 py-2 text-xs font-semibold text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 dark:text-black"
                   >
                     <SubmitIcon className="size-4" />
                     Submit
@@ -812,7 +843,7 @@ function PanelTab({
       type="button"
       onClick={onClick}
       aria-disabled={locked}
-      className={`inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+      className={`inline-flex items-center gap-1.5 border-b-2 px-2.5 py-1.5 text-xs font-medium transition-colors lg:px-3 lg:py-2 lg:text-sm ${
         active
           ? 'border-accent text-foreground'
           : locked
@@ -830,18 +861,20 @@ function Field({
   label,
   value,
   tone,
+  spanFull = false,
 }: {
   label: string;
   value: string;
   tone?: 'success' | 'error' | 'warning';
+  spanFull?: boolean;
 }) {
   return (
-    <div>
-      <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+    <div className={`flex min-h-0 flex-col ${spanFull ? 'lg:col-span-2' : ''}`}>
+      <p className="mb-1 text-[11px] font-medium text-muted-foreground">
         {label}
       </p>
       <pre
-        className={`overflow-x-auto rounded-lg border p-3 font-mono text-xs leading-relaxed ${
+        className={`min-h-0 flex-1 overflow-auto whitespace-pre-wrap wrap-break-word rounded-lg border p-2 font-mono text-[10px] leading-relaxed ${
           tone === 'success'
             ? 'border-accent/30 bg-accent/5 text-foreground'
             : tone === 'warning'
@@ -851,7 +884,7 @@ function Field({
               : 'border-border bg-muted/40 text-foreground'
         }`}
       >
-        {value}
+        {formatDisplayValue(value)}
       </pre>
     </div>
   );
@@ -859,11 +892,11 @@ function Field({
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border bg-muted/40 px-3 py-2.5">
+    <div className="rounded-lg border border-border bg-muted/40 px-2 py-1.5">
       <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1 font-mono text-sm font-semibold text-foreground">
+      <p className="mt-1 font-mono text-[12px] font-semibold text-foreground">
         {value}
       </p>
     </div>
