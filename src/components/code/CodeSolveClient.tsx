@@ -17,7 +17,7 @@ export default function CodeSolveClient({ question }: CodeSolveClientProps) {
 
   return (
     <main className="flex h-[calc(100vh-4rem)] min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-card px-6 py-3">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-card px-4 py-2.5 lg:px-5">
         <BookIcon className="size-4 text-muted-foreground" />
         <Link
           href="/code"

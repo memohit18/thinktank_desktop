@@ -42,6 +42,43 @@ function difficultyClass(difficulty: CodeQuestion['difficulty']) {
   return 'difficulty-hard';
 }
 
+function localResultStatusLabel(
+  status:
+    | 'passed'
+    | 'wrong_answer'
+    | 'runtime_error'
+    | 'compilation_error'
+    | 'invalid_input',
+) {
+  switch (status) {
+    case 'passed':
+      return 'Passed';
+    case 'wrong_answer':
+      return 'Wrong Answer';
+    case 'runtime_error':
+      return 'Runtime Error';
+    case 'compilation_error':
+      return 'Compilation Error';
+    case 'invalid_input':
+      return 'Invalid Input';
+    default:
+      return 'Error';
+  }
+}
+
+function localResultTone(
+  status:
+    | 'passed'
+    | 'wrong_answer'
+    | 'runtime_error'
+    | 'compilation_error'
+    | 'invalid_input',
+) {
+  if (status === 'passed') return 'success';
+  if (status === 'wrong_answer') return 'error';
+  return 'warning';
+}
+
 function formatLikes(likes: number) {
   if (likes >= 1000) {
     return `${(likes / 1000).toFixed(1).replace(/\.0$/, '')}K`;
@@ -81,6 +118,9 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
   const isTestResultsUnlocked = hasSubmitted || Boolean(latestTestResults?.testCases?.length);
 
   const activeCase = question.testCases[activeCaseIndex];
+  const activeRunResult = activeCase
+    ? result?.testResults.find((item) => item.id === activeCase.id)
+    : undefined;
 
   useEffect(() => {
     setCode(question.starterCode);
@@ -145,8 +185,10 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
           id: testCase.id,
           passed: false,
           expected: formatExpectedTestOutput(testCase),
-          actual: '—',
+          actual: formatExecutionError(error),
+          status: 'runtime_error',
           error: 'Execution failed',
+          message: formatExecutionError(error),
         })),
         executionTimeMs: 0,
       });
@@ -227,8 +269,10 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
           id: testCase.id,
           passed: false,
           expected: formatExpectedTestOutput(testCase),
-          actual: '—',
+          actual: formatExecutionError(error),
+          status: 'runtime_error',
           error: 'Execution failed',
+          message: formatExecutionError(error),
         })),
         executionTimeMs: 0,
       };
@@ -284,10 +328,10 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
-      <aside className="flex w-[min(42%,520px)] shrink-0 flex-col overflow-y-auto border-r border-border bg-card">
-        <div className="sticky top-0 z-10 border-b border-border bg-card px-6 pt-6">
+      <aside className="flex w-[min(36%,440px)] shrink-0 flex-col overflow-y-auto border-r border-border bg-card xl:w-[min(40%,500px)]">
+        <div className="sticky top-0 z-10 border-b border-border bg-card px-4 pt-4 lg:px-5 lg:pt-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="text-xl font-bold tracking-tight text-foreground lg:text-2xl">
               {question.number}. {question.title}
             </h1>
             <div className="flex flex-wrap gap-2">
@@ -305,7 +349,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
             </div>
           </div>
 
-          <div className="mt-4 flex gap-1 border-b border-border">
+          <div className="mt-3 flex gap-1 border-b border-border">
             <PanelTab
               active={leftPanel === 'question'}
               onClick={() => setLeftPanel('question')}
@@ -328,10 +372,10 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 lg:p-5">
           {leftPanel === 'question' ? (
             <>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
             {question.likes ? (
               <span className="inline-flex items-center gap-1.5">
                 <ThumbsUpIcon className="size-4" />
@@ -347,20 +391,20 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
             </button>
           </div>
 
-          <p className="mt-5 whitespace-pre-line text-sm leading-7 text-foreground/90">
+          <p className="mt-4 whitespace-pre-line text-[13px] leading-6 text-foreground/90 lg:text-sm lg:leading-7">
             {question.description}
           </p>
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-5 space-y-3">
             {question.examples.map((example) => (
               <div
                 key={example.label}
-                className="rounded-xl border border-border bg-muted/50 p-4"
+                className="rounded-xl border border-border bg-muted/50 p-3.5"
               >
                 <p className="text-sm font-semibold text-foreground">
                   {example.label}:
                 </p>
-                <div className="mt-3 space-y-2 text-sm">
+                <div className="mt-2.5 space-y-2 text-[13px] lg:text-sm">
                   <p>
                     <span className="font-medium text-muted-foreground">
                       Input:{' '}
@@ -391,11 +435,11 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
           </div>
 
           {question.constraints.length > 0 ? (
-            <div className="mt-6">
+            <div className="mt-5">
               <p className="text-sm font-semibold text-foreground">
                 Constraints:
               </p>
-              <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] text-muted-foreground lg:text-sm">
                 {question.constraints.map((constraint) => (
                   <li key={constraint}>{constraint}</li>
                 ))}
@@ -404,9 +448,9 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
           ) : null}
 
           {question.hints.length > 0 ? (
-            <div className="mt-6">
+            <div className="mt-5">
               <p className="text-sm font-semibold text-foreground">Hints:</p>
-              <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] text-muted-foreground lg:text-sm">
                 {question.hints.map((hint) => (
                   <li key={hint}>{hint}</li>
                 ))}
@@ -415,11 +459,11 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
           ) : null}
 
           {question.edgeCases.length > 0 ? (
-            <div className="mt-6">
+            <div className="mt-5">
               <p className="text-sm font-semibold text-foreground">
                 Edge Cases:
               </p>
-              <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] text-muted-foreground lg:text-sm">
                 {question.edgeCases.map((edgeCase) => (
                   <li key={edgeCase}>{edgeCase}</li>
                 ))}
@@ -428,11 +472,11 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
           ) : null}
 
           {question.followUps.length > 0 ? (
-            <div className="mt-6">
+            <div className="mt-5">
               <p className="text-sm font-semibold text-foreground">
                 Follow-up Questions:
               </p>
-              <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] text-muted-foreground lg:text-sm">
                 {question.followUps.map((followUp) => (
                   <li key={followUp}>{followUp}</li>
                 ))}
@@ -441,7 +485,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
           ) : null}
 
           {question.tags.length > 0 ? (
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-5 flex flex-wrap gap-2">
               {question.tags.map((tag) => (
                 <span
                   key={tag}
@@ -474,11 +518,9 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
       <div className="flex min-w-0 flex-1 flex-col">
         <div
           ref={editorRef}
-          className={`flex min-h-0 flex-[3] flex-col ${
-            isFullscreen ? 'bg-[#1e1e1e]' : ''
-          }`}
+          className={`flex min-h-0 flex-[2.7] flex-col ${isFullscreen ? 'bg-[#1e1e1e]' : ''}`}
         >
-          <div className="flex items-center justify-between border-b border-border bg-[#2d2d2d] px-4 py-2.5">
+          <div className="flex items-center justify-between border-b border-border bg-[#2d2d2d] px-3 py-2 lg:px-4 lg:py-2.5">
             <div className="flex items-center gap-2 text-sm text-neutral-200">
               <CodeIcon className="size-4 text-neutral-400" />
               <span className="font-medium">solution.py</span>
@@ -520,9 +562,9 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
           ) : null}
         </div>
 
-        <div className="flex min-h-0 flex-[2] flex-col border-t border-border lg:flex-row">
+        <div className="flex min-h-0 flex-[1.55] flex-col border-t border-border lg:flex-row">
           <section className="flex min-h-0 min-w-0 flex-1 flex-col border-b border-border bg-card lg:border-b-0 lg:border-r">
-            <div className="border-b border-border px-4 py-3">
+            <div className="border-b border-border px-3 py-2.5 lg:px-4 lg:py-3">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-foreground">Testcases</p>
                 <button
@@ -548,7 +590,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
             </div>
 
             <div className="flex min-h-0 flex-1">
-              <div className="w-28 shrink-0 space-y-1 border-r border-border p-2">
+              <div className="w-24 shrink-0 space-y-1 border-r border-border p-2 lg:w-28">
                 {question.testCases.map((testCase, index) => {
                   const testResult = result?.testResults.find(
                     (item) => item.id === testCase.id,
@@ -560,7 +602,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                       key={testCase.id}
                       type="button"
                       onClick={() => setActiveCaseIndex(index)}
-                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-colors ${
+                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] font-medium transition-colors lg:px-2.5 lg:py-2 lg:text-xs ${
                         isActive
                           ? 'bg-muted text-foreground'
                           : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
@@ -569,9 +611,11 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                       <span
                         className={`size-2 shrink-0 rounded-full ${
                           testResult
-                            ? testResult.passed
+                            ? testResult.status === 'passed'
                               ? 'bg-accent'
-                              : 'bg-red-500'
+                              : testResult.status === 'wrong_answer'
+                                ? 'bg-red-500'
+                                : 'bg-amber-500'
                             : 'bg-border'
                         }`}
                       />
@@ -581,9 +625,22 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                 })}
               </div>
 
-              <div className="min-w-0 flex-1 space-y-4 overflow-y-auto p-4">
+              <div className="min-w-0 flex-1 space-y-3 overflow-y-auto p-3 lg:space-y-4 lg:p-4">
                 {activeCase ? (
                   <>
+                    {activeRunResult ? (
+                      <div
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                          localResultTone(activeRunResult.status) === 'success'
+                            ? 'border-accent/30 bg-accent/5 text-accent'
+                            : localResultTone(activeRunResult.status) === 'warning'
+                              ? 'border-amber-500/30 bg-amber-500/10 text-amber-600'
+                              : 'border-red-500/30 bg-red-500/10 text-red-500'
+                        }`}
+                      >
+                        {localResultStatusLabel(activeRunResult.status)}
+                      </div>
+                    ) : null}
                     <Field label="Input" value={activeCase.input} />
                     {activeCase.validationType === 'count_only' ? (
                       <Field
@@ -598,17 +655,24 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                     {result ? (
                       <Field
                         label="Your Output"
-                        value={
-                          result.testResults.find(
-                            (item) => item.id === activeCase.id,
-                          )?.actual ?? '—'
-                        }
+                        value={activeRunResult?.actual ?? '—'}
                         tone={
-                          result.testResults.find(
-                            (item) => item.id === activeCase.id,
-                          )?.passed
+                          activeRunResult
+                            ? localResultTone(activeRunResult.status)
+                            : undefined
+                        }
+                      />
+                    ) : null}
+                    {activeRunResult?.message ? (
+                      <Field
+                        label="Details"
+                        value={activeRunResult.message}
+                        tone={
+                          activeRunResult.status === 'passed'
                             ? 'success'
-                            : 'error'
+                            : activeRunResult.status === 'wrong_answer'
+                              ? 'error'
+                              : 'warning'
                         }
                       />
                     ) : null}
@@ -618,15 +682,15 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
             </div>
           </section>
 
-          <section className="flex w-full shrink-0 flex-col bg-card lg:w-80">
-            <div className="border-b border-border px-4 py-3">
+          <section className="flex w-full shrink-0 flex-col bg-card lg:w-72 xl:w-80">
+            <div className="border-b border-border px-3 py-2.5 lg:px-4 lg:py-3">
               <p className="text-sm font-semibold text-foreground">
                 Performance
               </p>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col justify-between p-4">
-              <div className="space-y-4">
+            <div className="flex min-h-0 flex-1 flex-col justify-between p-3 lg:p-4">
+              <div className="space-y-3 lg:space-y-4">
                 {result ? (
                   <>
                     <div>
@@ -698,7 +762,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                 </div>
               </div>
 
-              <div className="mt-4 space-y-2">
+              <div className="mt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -769,7 +833,7 @@ function Field({
 }: {
   label: string;
   value: string;
-  tone?: 'success' | 'error';
+  tone?: 'success' | 'error' | 'warning';
 }) {
   return (
     <div>
@@ -780,6 +844,8 @@ function Field({
         className={`overflow-x-auto rounded-lg border p-3 font-mono text-xs leading-relaxed ${
           tone === 'success'
             ? 'border-accent/30 bg-accent/5 text-foreground'
+            : tone === 'warning'
+              ? 'border-amber-500/30 bg-amber-500/10 text-foreground'
             : tone === 'error'
               ? 'border-red-500/30 bg-red-500/5 text-foreground'
               : 'border-border bg-muted/40 text-foreground'

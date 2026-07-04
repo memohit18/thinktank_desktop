@@ -26,7 +26,14 @@ export type TestRunResult = {
   passed: boolean;
   expected: string;
   actual: string;
+  status:
+    | 'passed'
+    | 'wrong_answer'
+    | 'runtime_error'
+    | 'compilation_error'
+    | 'invalid_input';
   error: string | null;
+  message?: string;
 };
 
 export type ExecutionResult = {
@@ -131,6 +138,32 @@ function formatError(error: unknown) {
   }
 
   return 'Execution failed.';
+}
+
+function classifyPythonError(
+  errorMessage: string,
+  phase: 'bootstrap' | 'test',
+): TestRunResult['status'] {
+  const normalized = errorMessage.toLowerCase();
+
+  if (
+    normalized.includes('syntaxerror') ||
+    normalized.includes('indentationerror') ||
+    normalized.includes('taberror')
+  ) {
+    return 'compilation_error';
+  }
+
+  if (
+    phase === 'test' &&
+    (normalized.includes('missing required positional argument') ||
+      normalized.includes('positional arguments but') ||
+      normalized.includes('unexpected keyword argument'))
+  ) {
+    return 'invalid_input';
+  }
+
+  return 'runtime_error';
 }
 
 async function runInSandbox(
@@ -239,15 +272,19 @@ export async function executePython(
   }
 
   if (initialRun.execError) {
+    const bootstrapError = initialRun.execError;
+    const status = classifyPythonError(bootstrapError, 'bootstrap');
     return {
       consoleOutput: consoleLines.join('\n') || 'No console output.',
-      compileError: initialRun.execError,
+      compileError: bootstrapError,
       testResults: testCases.map((testCase) => ({
         id: testCase.id,
         passed: false,
         expected: formatExpectedTestOutput(testCase),
-        actual: '—',
-        error: initialRun.execError,
+        actual: bootstrapError,
+        status,
+        error: bootstrapError,
+        message: bootstrapError,
       })),
       executionTimeMs: Math.round(performance.now() - startedAt),
     };
@@ -267,12 +304,15 @@ export async function executePython(
     }
 
     if (testRun.execError || testRun.testError) {
+      const failureMessage = testRun.execError ?? testRun.testError ?? 'Execution failed.';
       testResults.push({
         id: testCase.id,
         passed: false,
         expected: formatExpectedTestOutput(testCase),
-        actual: 'Error',
-        error: testRun.execError ?? testRun.testError,
+        actual: failureMessage,
+        status: classifyPythonError(failureMessage, 'test'),
+        error: failureMessage,
+        message: failureMessage,
       });
       continue;
     }
@@ -296,7 +336,9 @@ len(__actual_result__) if isinstance(__actual_result__, (list, tuple, set)) else
       passed,
       expected: formatExpectedTestOutput(testCase),
       actual: actualDisplay,
+      status: passed ? 'passed' : 'wrong_answer',
       error: null,
+      message: passed ? undefined : 'Output did not match the expected result.',
     });
   }
 
