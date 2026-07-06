@@ -524,7 +524,7 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
         </div>
       </aside>
 
-      <div className="grid min-w-0 flex-1 grid-rows-[minmax(0,1fr)_15rem] overflow-hidden xl:grid-rows-[minmax(0,1fr)_16rem]">
+      <div className="grid min-w-0 flex-1 grid-rows-[minmax(0,1fr)_18rem] overflow-hidden xl:grid-rows-[minmax(0,1fr)_19rem]">
         <div className="min-h-0 px-2 pt-2 lg:px-2 lg:pt-2">
           <div
             ref={editorRef}
@@ -636,10 +636,10 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                 })}
               </div>
 
-              <div className="min-w-0 flex-1 overflow-hidden p-2 lg:p-2.5">
+              <div className="min-w-0 flex-1 overflow-y-auto p-2 lg:p-2.5">
                 {activeCase ? (
-                  <div className="flex h-full min-h-0 flex-col gap-2">
-                    <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
+                  <div className="space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       {activeRunResult ? (
                         <div
                           className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
@@ -662,20 +662,25 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                       ) : null}
                     </div>
 
-                    <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-2">
-                      <Field label="Input" value={activeCase.input} />
-                      {activeCase.validationType === 'count_only' ? (
+                    <Field label="Input" value={activeCase.input} />
+
+                    {activeCase.validationType === 'count_only' ? (
+                      <div className="grid gap-2 sm:grid-cols-2">
                         <Field
                           label="Validation"
                           value="Count-only (order does not matter)"
                         />
-                      ) : (
+                        <Field
+                          label="Expected Count"
+                          value={String(activeCase.expectedOutputCount ?? 0)}
+                        />
+                      </div>
+                    ) : result ? (
+                      <div className="grid gap-2 sm:grid-cols-2">
                         <Field
                           label="Expected Output"
                           value={formatExpectedTestOutput(activeCase)}
                         />
-                      )}
-                      {result ? (
                         <Field
                           label="Your Output"
                           value={activeRunResult?.actual ?? '—'}
@@ -685,28 +690,27 @@ export default function CodeWorkspace({ question }: CodeWorkspaceProps) {
                               : undefined
                           }
                         />
-                      ) : null}
-                      {activeCase.validationType === 'count_only' ? (
-                        <Field
-                          label="Expected Count"
-                          value={String(activeCase.expectedOutputCount ?? 0)}
-                        />
-                      ) : null}
-                      {activeRunResult?.message ? (
-                        <Field
-                          label="Details"
-                          value={activeRunResult.message}
-                          tone={
-                            activeRunResult.status === 'passed'
-                              ? 'success'
-                              : activeRunResult.status === 'wrong_answer'
-                                ? 'error'
-                                : 'warning'
-                          }
-                          spanFull
-                        />
-                      ) : null}
-                    </div>
+                      </div>
+                    ) : (
+                      <Field
+                        label="Expected Output"
+                        value={formatExpectedTestOutput(activeCase)}
+                      />
+                    )}
+
+                    {activeRunResult?.message ? (
+                      <Field
+                        label="Details"
+                        value={activeRunResult.message}
+                        tone={
+                          activeRunResult.status === 'passed'
+                            ? 'success'
+                            : activeRunResult.status === 'wrong_answer'
+                              ? 'error'
+                              : 'warning'
+                        }
+                      />
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -861,27 +865,25 @@ function Field({
   label,
   value,
   tone,
-  spanFull = false,
 }: {
   label: string;
   value: string;
   tone?: 'success' | 'error' | 'warning';
-  spanFull?: boolean;
 }) {
   return (
-    <div className={`flex min-h-0 flex-col ${spanFull ? 'lg:col-span-2' : ''}`}>
+    <div>
       <p className="mb-1 text-[11px] font-medium text-muted-foreground">
         {label}
       </p>
       <pre
-        className={`min-h-0 flex-1 overflow-auto whitespace-pre-wrap wrap-break-word rounded-lg border p-2 font-mono text-[10px] leading-relaxed ${
+        className={`max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-lg border px-2.5 py-2 font-mono text-[11px] leading-relaxed ${
           tone === 'success'
             ? 'border-accent/30 bg-accent/5 text-foreground'
             : tone === 'warning'
               ? 'border-amber-500/30 bg-amber-500/10 text-foreground'
-            : tone === 'error'
-              ? 'border-red-500/30 bg-red-500/5 text-foreground'
-              : 'border-border bg-muted/40 text-foreground'
+              : tone === 'error'
+                ? 'border-red-500/30 bg-red-500/5 text-foreground'
+                : 'border-border bg-muted/40 text-foreground'
         }`}
       >
         {formatDisplayValue(value)}

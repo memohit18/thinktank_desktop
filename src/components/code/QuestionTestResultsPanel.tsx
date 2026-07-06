@@ -138,22 +138,26 @@ export default function QuestionTestResultsPanel({
               </div>
 
               <ResultField label="Input" value={formatDisplayValue(activeCase.input)} />
+
               {activeCase.validationType === 'count_only' ? (
                 <ResultField
                   label="Expected Count"
                   value={String(activeCase.expectedOutputCount ?? 0)}
                 />
               ) : (
-                <ResultField
-                  label="Expected Output"
-                  value={formatDisplayValue(activeCase.expectedOutput)}
-                />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <ResultField
+                    label="Expected Output"
+                    value={formatDisplayValue(activeCase.expectedOutput)}
+                  />
+                  <ResultField
+                    label="Your Output"
+                    value={formatDisplayValue(activeCase.actualOutput)}
+                    tone={activeCase.passed ? 'success' : 'error'}
+                  />
+                </div>
               )}
-              <ResultField
-                label="Your Output"
-                value={formatDisplayValue(activeCase.actualOutput)}
-                tone={activeCase.passed ? 'success' : 'error'}
-              />
+
               {activeCase.message ? (
                 <ResultField label="Details" value={activeCase.message} tone="error" />
               ) : null}
@@ -178,7 +182,7 @@ function ResultField({
     <div>
       <p className="mb-1.5 text-xs font-medium text-muted-foreground">{label}</p>
       <pre
-        className={`overflow-auto whitespace-pre-wrap wrap-break-word rounded-lg border p-2.5 font-mono text-[11px] leading-relaxed ${
+        className={`max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-lg border px-2.5 py-2 font-mono text-[11px] leading-relaxed ${
           tone === 'success'
             ? 'border-accent/30 bg-accent/5 text-foreground'
             : tone === 'error'

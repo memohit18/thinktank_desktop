@@ -226,7 +226,7 @@ export default function CodingChallengesPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
