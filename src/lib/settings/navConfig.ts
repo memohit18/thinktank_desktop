@@ -28,7 +28,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   {
     id: 'nav-fitforge',
     moduleId: 'fitforge',
-    label: 'FitForge',
+    label: 'Fitness',
     href: '/fitforge',
     description: 'AI diet planner, nutrition, workouts, and coaching.',
     visible: true,

@@ -29,7 +29,7 @@ export const DEFAULT_PORTAL_SETTINGS: PortalSettings = {
     {
       id: 'nav-fitforge',
       moduleId: 'fitforge',
-      label: 'FitForge',
+      label: 'Fitness',
       href: '/fitforge',
       description: 'AI diet planner, nutrition, workouts, and coaching.',
       visible: true,
@@ -52,7 +52,7 @@ export const DEFAULT_PORTAL_SETTINGS: PortalSettings = {
     },
     {
       id: 'fitforge',
-      name: 'FitForge',
+      name: 'Fitness',
       description: 'Diet planner, nutrition tracking, and AI fitness coaching.',
       enabled: true,
       viewMode: 'desktop',
