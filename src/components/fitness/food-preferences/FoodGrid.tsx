@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import FoodCard, { type FoodPreferenceAction } from '@/components/fitness/food-preferences/FoodCard';
 import EmptyState from '@/components/fitness/food-preferences/EmptyState';
 import type { Food } from '@/lib/fitness/food/types';
@@ -21,7 +22,9 @@ function canEditFood(food: Food, isAdmin: boolean) {
   return isAdmin && Boolean(food.isVerified);
 }
 
-export default function FoodGrid({
+export default memo(FoodGrid);
+
+function FoodGrid({
   foods,
   favoriteFoodIds,
   restrictedFoodIds,

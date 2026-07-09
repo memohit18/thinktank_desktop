@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import type { FoodCategory } from '@/lib/fitness/food/types';
 
 type CategoryTabsProps = {
@@ -8,7 +9,9 @@ type CategoryTabsProps = {
   onChange: (categoryId: string) => void;
 };
 
-export default function CategoryTabs({
+export default memo(CategoryTabs);
+
+function CategoryTabs({
   categories,
   activeCategoryId,
   onChange,

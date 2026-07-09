@@ -78,7 +78,7 @@ export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery,
   ...RTK_QUERY_DEFAULTS,
-  keepUnusedDataFor: 60,
+  keepUnusedDataFor: 300,
   tagTypes: ['Auth', 'CodeSession', 'QuestionFilters', 'Problems', 'Profile', 'Submissions', 'UserProgress', 'Roadmaps', 'FitnessProfile', 'FitnessGoals', 'Transformation', 'Foods', 'FoodCategories', 'FoodPreferences', 'NutritionPreferences'],
   endpoints: () => ({}),
 });

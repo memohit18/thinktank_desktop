@@ -12,9 +12,11 @@ import {
   unwrapPhysiqueGoals,
 } from '@/lib/fitness/fitnessResponse';
 import { apiSlice } from './apiSlice';
-import { RTK_QUERY_FRESH_CACHE } from './rtkQueryDefaults';
+import { RTK_QUERY_FRESH_CACHE, withQueryDefaults } from './rtkQueryDefaults';
 
-const fitnessProfileQueryOptions = RTK_QUERY_FRESH_CACHE;
+const fitnessProfileQueryOptions = {
+  keepUnusedDataFor: RTK_QUERY_FRESH_CACHE.keepUnusedDataFor,
+};
 
 const PROFILE_READ_PATHS = ['/fitness/profile', '/fitness-profile'] as const;
 
@@ -123,10 +125,17 @@ export const fitnessApi = apiSlice.injectEndpoints({
 });
 
 export const {
-  useGetFitnessGoalsQuery,
-  useGetFitnessProfileQuery,
   useCreateFitnessProfileMutation,
   useUpdateFitnessProfileMutation,
 } = fitnessApi;
+
+export const useGetFitnessGoalsQuery = withQueryDefaults(
+  fitnessApi.useGetFitnessGoalsQuery,
+  RTK_QUERY_FRESH_CACHE,
+);
+export const useGetFitnessProfileQuery = withQueryDefaults(
+  fitnessApi.useGetFitnessProfileQuery,
+  RTK_QUERY_FRESH_CACHE,
+);
 
 export { fitnessProfileQueryOptions };

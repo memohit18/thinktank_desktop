@@ -37,7 +37,7 @@ export function useFoodPreferences() {
   );
 
   useEffect(() => {
-    if (isLoading || isFetching || hasHydrated) return;
+    if (isLoading || hasHydrated) return;
 
     const draft = readFoodPreferencesDraft();
 
@@ -48,7 +48,7 @@ export function useFoodPreferences() {
     }
 
     setHasHydrated(true);
-  }, [hasHydrated, isFetching, isLoading, preferences]);
+  }, [hasHydrated, isLoading, preferences]);
 
   function persistDraft(values: FoodPreferencesFormValues) {
     writeFoodPreferencesDraft({
@@ -66,7 +66,8 @@ export function useFoodPreferences() {
     initialValues,
     hasHydrated,
     hasExistingPreferences: hasSavedPreferences(preferences),
-    isLoading: isLoading || isFetching || !hasHydrated,
+    isLoading: !hasHydrated && isLoading,
+    isFetching,
     isError,
     refetch,
     persistDraft,

@@ -1,4 +1,5 @@
 import { apiSlice } from './apiSlice';
+import { RTK_QUERY_STABLE_CACHE, withQueryDefaults } from './rtkQueryDefaults';
 
 export type UserProfile = {
   name: string;
@@ -18,6 +19,7 @@ export const profileApi = apiSlice.injectEndpoints({
     getProfile: builder.query<UserProfile, void>({
       query: () => '/profile',
       providesTags: ['Profile'],
+      keepUnusedDataFor: RTK_QUERY_STABLE_CACHE.keepUnusedDataFor,
     }),
     updateProfile: builder.mutation<UserProfile, UpdateProfilePayload>({
       query: (body) => ({
@@ -33,4 +35,9 @@ export const profileApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useGetProfileQuery, useUpdateProfileMutation } = profileApi;
+export const { useUpdateProfileMutation } = profileApi;
+
+export const useGetProfileQuery = withQueryDefaults(
+  profileApi.useGetProfileQuery,
+  RTK_QUERY_STABLE_CACHE,
+);

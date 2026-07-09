@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Loader2, Plus, RefreshCw, Save } from 'lucide-react';
 import EditFoodModal from '@/components/fitness/food-preferences/EditFoodModal';
@@ -90,6 +90,7 @@ export default function FoodPreferencesPage() {
   const {
     initialValues: nutritionInitialValues,
     hasExistingPreferences: hasExistingNutritionPreferences,
+    hasHydrated: hasNutritionHydrated,
     isLoading: isNutritionLoading,
     isError: isNutritionError,
     refetch: refetchNutritionPreferences,
@@ -134,20 +135,40 @@ export default function FoodPreferencesPage() {
 
   const { saveFood: saveCustomFood, isSaving: isCreatingCustomFood } = useSaveFood({
     mode: 'custom',
-    onSaved: () => void refetchFoods(),
   });
 
   const { saveFood: saveCatalogFood, isSaving: isCreatingCatalogFood } = useSaveFood({
     mode: 'catalog',
-    onSaved: () => void refetchFoods(),
   });
 
-  const { updateFood, isUpdating: isUpdatingFood } = useUpdateFood({
-    onUpdated: () => void refetchFoods(),
+  const { updateFood, isUpdating: isUpdatingFood } = useUpdateFood();
+
+  const favoriteFoodIds = useWatch({
+    control: foodForm.control,
+    name: 'favoriteFoodIds',
+  }) ?? [];
+  const restrictedFoodIds = useWatch({
+    control: foodForm.control,
+    name: 'restrictedFoodIds',
+  }) ?? [];
+  const availableFoodIds = useWatch({
+    control: foodForm.control,
+    name: 'availableFoodIds',
+  }) ?? [];
+
+  const watchedNutritionValues = useWatch({
+    control: nutritionForm.control,
   });
 
-  const foodValues = foodForm.watch();
-  const nutritionValues = nutritionForm.watch();
+  const nutritionValues = useMemo(
+    () => ({
+      ...EMPTY_NUTRITION_PREFERENCES_VALUES,
+      ...watchedNutritionValues,
+    }),
+    [watchedNutritionValues],
+  );
+
+  const draftTimeoutRef = useRef<number | null>(null);
 
   const catalogFoods = useMemo(() => {
     const map = new Map(allFoods.map((food) => [food.id, food]));
@@ -170,28 +191,61 @@ export default function FoodPreferencesPage() {
   }, [foodForm, hasHydrated, hasInitializedFoodForm, initialValues]);
 
   useEffect(() => {
-    if (hasInitializedNutritionForm || isNutritionLoading) return;
+    if (!hasNutritionHydrated || hasInitializedNutritionForm) return;
     nutritionForm.reset(nutritionInitialValues);
     setHasInitializedNutritionForm(true);
   }, [
     hasInitializedNutritionForm,
-    isNutritionLoading,
+    hasNutritionHydrated,
     nutritionForm,
     nutritionInitialValues,
   ]);
 
+  const persistDraftDebounced = useCallback(
+    (values: FoodPreferencesSchemaValues) => {
+      if (draftTimeoutRef.current) {
+        window.clearTimeout(draftTimeoutRef.current);
+      }
+
+      draftTimeoutRef.current = window.setTimeout(() => {
+        persistDraft(values);
+      }, 400);
+    },
+    [persistDraft],
+  );
+
   useEffect(() => {
     if (!hasInitializedFoodForm) return;
-    persistDraft(foodValues);
-  }, [foodValues, hasInitializedFoodForm, persistDraft]);
 
-  function handleToggle(foodId: string, action: FoodPreferenceAction) {
+    persistDraftDebounced({
+      favoriteFoodIds,
+      restrictedFoodIds,
+      availableFoodIds,
+    });
+
+    return () => {
+      if (draftTimeoutRef.current) {
+        window.clearTimeout(draftTimeoutRef.current);
+      }
+    };
+  }, [
+    availableFoodIds,
+    favoriteFoodIds,
+    hasInitializedFoodForm,
+    persistDraftDebounced,
+    restrictedFoodIds,
+  ]);
+
+  const handleToggle = useCallback((foodId: string, action: FoodPreferenceAction) => {
     const nextValues = applyFoodPreferenceToggle(foodForm.getValues(), foodId, action);
     foodForm.reset(nextValues, { keepDefaultValues: false });
     void foodForm.trigger();
-  }
+  }, [foodForm]);
 
-  function handleRemove(foodId: string, field: 'favoriteFoodIds' | 'restrictedFoodIds' | 'availableFoodIds') {
+  const handleRemove = useCallback((
+    foodId: string,
+    field: 'favoriteFoodIds' | 'restrictedFoodIds' | 'availableFoodIds',
+  ) => {
     const current = foodForm.getValues();
     foodForm.reset(
       {
@@ -201,7 +255,7 @@ export default function FoodPreferencesPage() {
       { keepDefaultValues: false },
     );
     void foodForm.trigger();
-  }
+  }, [foodForm]);
 
   async function handleCreateCustomFood(values: CreateFoodSchemaValues) {
     const food = await saveCustomFood(values);
@@ -265,9 +319,9 @@ export default function FoodPreferencesPage() {
   );
 
   if (
-    isFoodsLoading ||
     isPreferencesLoading ||
     isNutritionLoading ||
+    (isFoodsLoading && foods.length === 0) ||
     !hasInitializedFoodForm ||
     !hasInitializedNutritionForm
   ) {
@@ -354,9 +408,9 @@ export default function FoodPreferencesPage() {
             description="Foods you enjoy and want prioritized in your meal plans."
             requirement={`Min ${FOOD_PREFERENCE_MIN_FAVORITES}`}
             foods={catalogFoods}
-            selectedIds={foodValues.favoriteFoodIds}
-            onRemove={(foodId) => handleRemove(foodId, 'favoriteFoodIds')}
-            error={foodErrors.favoriteFoodIds?.message}
+          selectedIds={favoriteFoodIds}
+          onRemove={(foodId) => handleRemove(foodId, 'favoriteFoodIds')}
+          error={foodErrors.favoriteFoodIds?.message}
             emptyLabel="Add favorites from the available foods grid below."
           />
 
@@ -364,9 +418,9 @@ export default function FoodPreferencesPage() {
             title="Restricted foods"
             description="Foods to exclude from recommendations due to preference or intolerance."
             foods={catalogFoods}
-            selectedIds={foodValues.restrictedFoodIds}
-            onRemove={(foodId) => handleRemove(foodId, 'restrictedFoodIds')}
-            error={foodErrors.restrictedFoodIds?.message}
+          selectedIds={restrictedFoodIds}
+          onRemove={(foodId) => handleRemove(foodId, 'restrictedFoodIds')}
+          error={foodErrors.restrictedFoodIds?.message}
             emptyLabel="No restricted foods selected."
           />
 
@@ -378,7 +432,7 @@ export default function FoodPreferencesPage() {
                 restrictions, or availability using the action buttons on each card.
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                {foodValues.availableFoodIds.length} tagged as available
+                {availableFoodIds.length} tagged as available
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -405,9 +459,9 @@ export default function FoodPreferencesPage() {
 
           <FoodGrid
             foods={foods}
-            favoriteFoodIds={foodValues.favoriteFoodIds}
-            restrictedFoodIds={foodValues.restrictedFoodIds}
-            availableFoodIds={foodValues.availableFoodIds}
+            favoriteFoodIds={favoriteFoodIds}
+            restrictedFoodIds={restrictedFoodIds}
+            availableFoodIds={availableFoodIds}
             isAdmin={isAdmin}
             onToggle={handleToggle}
             onEditFood={setEditingFood}

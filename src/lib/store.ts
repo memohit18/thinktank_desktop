@@ -21,7 +21,22 @@ export function makeStore() {
       getDefaultMiddleware().concat(apiSlice.middleware),
   });
 
-  setupListeners(store.dispatch);
+  setupListeners(store.dispatch, (dispatch, { onOnline, onOffline }) => {
+    if (typeof window === 'undefined' || !window.addEventListener) {
+      return () => {};
+    }
+
+    const handleOnline = () => dispatch(onOnline());
+    const handleOffline = () => dispatch(onOffline());
+
+    window.addEventListener('online', handleOnline, false);
+    window.addEventListener('offline', handleOffline, false);
+
+    return () => {
+      window.removeEventListener('online', handleOnline, false);
+      window.removeEventListener('offline', handleOffline, false);
+    };
+  });
 
   return store;
 }

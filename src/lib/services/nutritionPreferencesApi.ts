@@ -8,13 +8,15 @@ import {
   unwrapNutritionPreferences,
 } from '@/lib/services/nutrition-preferences.service';
 import { apiSlice } from './apiSlice';
-import { RTK_QUERY_FRESH_CACHE } from './rtkQueryDefaults';
+import { RTK_QUERY_STABLE_CACHE, invalidateTagsOnSuccess, withQueryDefaults } from './rtkQueryDefaults';
 import type {
   NutritionPreferences,
   NutritionPreferencesPayload,
 } from '@/types/nutrition-preferences';
 
-const nutritionQueryOptions = RTK_QUERY_FRESH_CACHE;
+const nutritionQueryOptions = {
+  keepUnusedDataFor: RTK_QUERY_STABLE_CACHE.keepUnusedDataFor,
+};
 
 export const nutritionPreferencesApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -62,7 +64,7 @@ export const nutritionPreferencesApi = apiSlice.injectEndpoints({
 
         return preferences;
       },
-      invalidatesTags: ['NutritionPreferences'],
+      invalidatesTags: invalidateTagsOnSuccess(['NutritionPreferences']),
     }),
     updateNutritionPreferences: builder.mutation<
       NutritionPreferences,
@@ -78,19 +80,23 @@ export const nutritionPreferencesApi = apiSlice.injectEndpoints({
 
         return preferences;
       },
-      invalidatesTags: ['NutritionPreferences'],
+      invalidatesTags: invalidateTagsOnSuccess(['NutritionPreferences']),
     }),
     deleteNutritionPreferences: builder.mutation<void, void>({
       query: () => nutritionPreferencesService.delete(),
-      invalidatesTags: ['NutritionPreferences'],
+      invalidatesTags: invalidateTagsOnSuccess(['NutritionPreferences']),
     }),
   }),
   overrideExisting: true,
 });
 
 export const {
-  useGetNutritionPreferencesQuery,
   useCreateNutritionPreferencesMutation,
   useUpdateNutritionPreferencesMutation,
   useDeleteNutritionPreferencesMutation,
 } = nutritionPreferencesApi;
+
+export const useGetNutritionPreferencesQuery = withQueryDefaults(
+  nutritionPreferencesApi.useGetNutritionPreferencesQuery,
+  RTK_QUERY_STABLE_CACHE,
+);

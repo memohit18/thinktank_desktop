@@ -75,7 +75,7 @@ export function useFoods() {
     setPage,
     canGoPrevious: (meta?.page ?? 1) > 1,
     canGoNext: (meta?.page ?? 1) < (meta?.totalPages ?? 0),
-    isLoading: isFoodsLoading || isCategoriesLoading,
+    isLoading: (isFoodsLoading && !foodsResult) || (isCategoriesLoading && !categoriesResult),
     isFetching: isFoodsFetching,
     isError: isFoodsError || isCategoriesError,
     refetch: () => {

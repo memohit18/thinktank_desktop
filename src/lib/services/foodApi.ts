@@ -23,9 +23,9 @@ import type {
 } from '@/lib/fitness/food/types';
 import { foodsService } from '@/lib/services/foods.service';
 import { apiSlice } from './apiSlice';
-import { RTK_QUERY_FRESH_CACHE } from './rtkQueryDefaults';
+import { RTK_QUERY_STABLE_CACHE, invalidateTagsOnSuccess, withQueryDefaults } from './rtkQueryDefaults';
 
-const foodQueryOptions = RTK_QUERY_FRESH_CACHE;
+const foodQueryOptions = { keepUnusedDataFor: RTK_QUERY_STABLE_CACHE.keepUnusedDataFor };
 
 function buildFoodsQuery(params?: FoodsQueryParams) {
   const searchParams = new URLSearchParams();
@@ -126,7 +126,7 @@ export const foodApi = apiSlice.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['FoodPreferences'],
+      invalidatesTags: invalidateTagsOnSuccess(['FoodPreferences']),
     }),
     updateFoodPreferences: builder.mutation<
       FoodPreferences,
@@ -144,14 +144,14 @@ export const foodApi = apiSlice.injectEndpoints({
         }
         return preferences;
       },
-      invalidatesTags: ['FoodPreferences'],
+      invalidatesTags: invalidateTagsOnSuccess(['FoodPreferences']),
     }),
     removeFoodPreference: builder.mutation<void, string>({
       query: (foodId) => ({
         url: `/food-preferences/${foodId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['FoodPreferences'],
+      invalidatesTags: invalidateTagsOnSuccess(['FoodPreferences']),
     }),
     createCustomFood: builder.mutation<Food, CreateFoodPayload>({
       query: (body) => foodsService.createCustom(body),
@@ -160,7 +160,10 @@ export const foodApi = apiSlice.injectEndpoints({
         if (!food) throw new Error('Invalid food response');
         return food;
       },
-      invalidatesTags: [{ type: 'Foods', id: 'LIST' }, 'FoodCategories'],
+      invalidatesTags: invalidateTagsOnSuccess([
+        { type: 'Foods', id: 'LIST' },
+        'FoodCategories',
+      ]),
     }),
     createCatalogFood: builder.mutation<Food, CreateFoodPayload>({
       query: (body) => foodsService.createCatalog(body),
@@ -169,7 +172,10 @@ export const foodApi = apiSlice.injectEndpoints({
         if (!food) throw new Error('Invalid food response');
         return food;
       },
-      invalidatesTags: [{ type: 'Foods', id: 'LIST' }, 'FoodCategories'],
+      invalidatesTags: invalidateTagsOnSuccess([
+        { type: 'Foods', id: 'LIST' },
+        'FoodCategories',
+      ]),
     }),
     updateFood: builder.mutation<Food, { foodId: string; body: UpdateFoodPayload }>({
       query: ({ foodId, body }) => foodsService.update(foodId, body),
@@ -178,22 +184,20 @@ export const foodApi = apiSlice.injectEndpoints({
         if (!food) throw new Error('Invalid food response');
         return food;
       },
-      invalidatesTags: (_result, _error, { foodId }) => [
-        { type: 'Foods', id: foodId },
-        { type: 'Foods', id: 'LIST' },
-        'FoodCategories',
-        'FoodPreferences',
-      ],
+      invalidatesTags: invalidateTagsOnSuccess((result, arg) => {
+        const { foodId } = arg as { foodId: string };
+        return [
+          { type: 'Foods', id: foodId },
+          { type: 'Foods', id: 'LIST' },
+          'FoodCategories',
+        ] as const;
+      }),
     }),
   }),
   overrideExisting: true,
 });
 
 export const {
-  useGetFoodsQuery,
-  useGetFoodByIdQuery,
-  useGetFoodCategoriesQuery,
-  useGetFoodPreferencesQuery,
   useAddFoodPreferenceMutation,
   useUpdateFoodPreferencesMutation,
   useRemoveFoodPreferenceMutation,
@@ -201,3 +205,20 @@ export const {
   useCreateCatalogFoodMutation,
   useUpdateFoodMutation,
 } = foodApi;
+
+export const useGetFoodsQuery = withQueryDefaults(
+  foodApi.useGetFoodsQuery,
+  RTK_QUERY_STABLE_CACHE,
+);
+export const useGetFoodByIdQuery = withQueryDefaults(
+  foodApi.useGetFoodByIdQuery,
+  RTK_QUERY_STABLE_CACHE,
+);
+export const useGetFoodCategoriesQuery = withQueryDefaults(
+  foodApi.useGetFoodCategoriesQuery,
+  RTK_QUERY_STABLE_CACHE,
+);
+export const useGetFoodPreferencesQuery = withQueryDefaults(
+  foodApi.useGetFoodPreferencesQuery,
+  RTK_QUERY_STABLE_CACHE,
+);
