@@ -29,12 +29,43 @@ export const RTK_QUERY_STABLE_CACHE = {
   keepUnusedDataFor: 300,
 } as const;
 
+const QUERY_OPTION_KEYS = new Set([
+  'refetchOnMountOrArgChange',
+  'refetchOnFocus',
+  'refetchOnReconnect',
+  'pollingInterval',
+  'skipPollingIfUnfocused',
+  'skip',
+  'selectFromResult',
+]);
+
+function isQueryOptions(value: unknown): value is QuerySubscriptionOptions {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    Object.keys(value).some((key) => QUERY_OPTION_KEYS.has(key))
+  );
+}
+
+function mergeQueryOptions(
+  defaults: QuerySubscriptionOptions,
+  options?: QuerySubscriptionOptions,
+) {
+  if (!options) return defaults;
+  return { ...defaults, ...options };
+}
+
 export function withQueryDefaults<Hook extends (...args: any[]) => any>(
   useQuery: Hook,
   defaults: QuerySubscriptionOptions,
 ): Hook {
-  return ((arg: Parameters<Hook>[0], options?: QuerySubscriptionOptions) =>
-    useQuery(arg, { ...defaults, ...options })) as Hook;
+  return ((arg?: unknown, options?: QuerySubscriptionOptions) => {
+    if (isQueryOptions(arg)) {
+      return useQuery(undefined, mergeQueryOptions(defaults, arg));
+    }
+
+    return useQuery(arg, mergeQueryOptions(defaults, options));
+  }) as Hook;
 }
 
 type InvalidationTag = string | { type: string; id?: string | number };

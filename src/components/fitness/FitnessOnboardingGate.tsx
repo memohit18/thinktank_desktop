@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { hasCompletedFitnessOnboarding } from '@/lib/fitness/profileMapper';
+import { RTK_QUERY_STABLE_CACHE } from '@/lib/services/rtkQueryDefaults';
 import { useGetFitnessProfileQuery } from '@/lib/services/fitnessApi';
 
 type FitnessOnboardingGateProps = {
@@ -22,7 +23,7 @@ export default function FitnessOnboardingGate({
     isUninitialized,
     isFetching,
     isError,
-  } = useGetFitnessProfileQuery();
+  } = useGetFitnessProfileQuery(undefined, RTK_QUERY_STABLE_CACHE);
 
   const profileIsComplete = hasCompletedFitnessOnboarding(profile);
   const isCheckingProfile =

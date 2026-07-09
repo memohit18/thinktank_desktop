@@ -1,5 +1,5 @@
 import { apiSlice } from './apiSlice';
-import { RTK_QUERY_STABLE_CACHE, withQueryDefaults } from './rtkQueryDefaults';
+import { RTK_QUERY_STABLE_CACHE, invalidateTagsOnSuccess, withQueryDefaults } from './rtkQueryDefaults';
 
 export type UserProfile = {
   name: string;
@@ -30,7 +30,7 @@ export const profileApi = apiSlice.injectEndpoints({
         },
         body,
       }),
-      invalidatesTags: ['Profile'],
+      invalidatesTags: invalidateTagsOnSuccess(['Profile']),
     }),
   }),
 });

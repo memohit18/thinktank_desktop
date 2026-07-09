@@ -51,7 +51,7 @@ import type {
 } from '@/types/nutrition-preferences';
 import type { Food } from '@/lib/fitness/food/types';
 import type { CreateFoodSchemaValues } from '@/lib/fitness/food/schemas/food.schema';
-import { useGetProfileQuery } from '@/lib/services/profileApi';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 export default function FoodPreferencesPage() {
   const router = useRouter();
@@ -128,8 +128,7 @@ export default function FoodPreferencesPage() {
   const [isCreateCatalogOpen, setIsCreateCatalogOpen] = useState(false);
   const [editingFood, setEditingFood] = useState<Food | null>(null);
 
-  const { data: profile } = useGetProfileQuery();
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = useIsAdmin();
   const categoryOptions =
     categoriesResult?.allowedCategories ?? categoriesResult?.tabs ?? categories;
 
