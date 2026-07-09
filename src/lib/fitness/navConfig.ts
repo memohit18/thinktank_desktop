@@ -31,8 +31,8 @@ export const FITNESS_MODULE_NAV_ITEMS = [
     id: 'nutrition' as const,
     label: 'Nutrition',
     icon: UtensilsCrossed,
-    href: '#',
-    disabled: true,
+    href: '/fitness/food-preferences',
+    disabled: false,
   },
   {
     id: 'analytics' as const,
@@ -62,8 +62,8 @@ export const FITNESS_SETUP_NAV_ITEMS = [
     id: 'nutrition' as const,
     label: 'Nutrition',
     icon: UtensilsCrossed,
-    href: '#',
-    disabled: true,
+    href: '/fitness/food-preferences',
+    disabled: false,
   },
   {
     id: 'analytics' as const,

@@ -6,7 +6,7 @@ import AppSidebar from '@/components/layout/AppSidebar';
 import { useSidebar } from '@/providers/SidebarProvider';
 
 function isFixedViewportRoute(pathname: string) {
-  return /^\/code\/[^/]+$/.test(pathname);
+  return /^\/code\/[^/]+$/.test(pathname) || pathname.startsWith('/fitness');
 }
 
 export default function ProtectedShell({
@@ -33,7 +33,9 @@ export default function ProtectedShell({
         <AppHeader />
         <div
           className={
-            fixedViewport ? 'min-h-0 flex-1 overflow-hidden' : 'flex-1'
+            fixedViewport
+              ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+              : 'flex-1'
           }
         >
           {children}

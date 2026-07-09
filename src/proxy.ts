@@ -74,6 +74,12 @@ export const config = {
     '/api/roadmaps/:path*',
     '/api/fitness/:path*',
     '/api/transformation/:path*',
+    '/api/foods',
+    '/api/foods/:path*',
+    '/api/food-preferences',
+    '/api/food-preferences/:path*',
+    '/api/nutrition-preferences',
+    '/api/nutrition-preferences/:path*',
     '/api/code/:path*',
   ],
 };

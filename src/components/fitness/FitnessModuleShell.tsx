@@ -42,8 +42,8 @@ export default function FitnessModuleShell({
         : activeNav;
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] bg-background">
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-card/50 p-4 lg:flex">
+    <div className="flex h-full min-h-0 overflow-hidden bg-background">
+      <aside className="hidden h-full w-56 shrink-0 flex-col overflow-hidden border-r border-border bg-card/50 p-4 lg:flex">
         <div className="mb-8">
           <p className="text-lg font-bold text-accent">Fitness</p>
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -104,7 +104,7 @@ export default function FitnessModuleShell({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {typeof progressPercent === 'number' ? (
           <div className="h-1 overflow-hidden bg-muted">
             <div
@@ -114,11 +114,11 @@ export default function FitnessModuleShell({
           </div>
         ) : null}
 
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
             <div className="mx-auto max-w-6xl">{children}</div>
           </div>
-          {footer}
+          {footer ? <div className="shrink-0">{footer}</div> : null}
         </div>
       </div>
     </div>

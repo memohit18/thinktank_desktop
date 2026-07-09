@@ -9,6 +9,8 @@ import './services/userProgressApi';
 import './services/roadmapsApi';
 import './services/fitnessApi';
 import './services/transformationApi';
+import './services/foodApi';
+import './services/nutritionPreferencesApi';
 
 export function makeStore() {
   const store = configureStore({
