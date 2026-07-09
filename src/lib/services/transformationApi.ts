@@ -14,10 +14,9 @@ import {
   unwrapTransformationMilestones,
 } from '@/lib/fitness/transformation/transformationResponse';
 import { apiSlice } from './apiSlice';
+import { RTK_QUERY_FRESH_CACHE } from './rtkQueryDefaults';
 
-const transformationQueryOptions = {
-  refetchOnMountOrArgChange: true as const,
-};
+const transformationQueryOptions = RTK_QUERY_FRESH_CACHE;
 
 export type TransformationHistoryParams = {
   page?: number;

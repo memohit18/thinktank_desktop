@@ -88,8 +88,7 @@ const stepFieldMap: Record<
 > = {
   'basic-info': ['age', 'gender', 'heightCm', 'weightKg'],
   activity: ['activityLevel'],
-  goal: ['fitnessGoal'],
-  'physique-goal': ['physiqueGoalId'],
+  goal: ['physiqueGoalId', 'fitnessGoal'],
   diet: [
     'dietType',
     'workoutExperience',

@@ -9,9 +9,7 @@ import { useGetFitnessProfileQuery } from '@/lib/services/fitnessApi';
 
 export default function FitnessModulePage() {
   const router = useRouter();
-  const { data: profile, isLoading } = useGetFitnessProfileQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-  });
+  const { data: profile, isLoading } = useGetFitnessProfileQuery();
 
   const profileIsComplete = hasCompletedFitnessOnboarding(profile);
 

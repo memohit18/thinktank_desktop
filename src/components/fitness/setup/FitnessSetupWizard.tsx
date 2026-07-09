@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import FitnessSetupShell, {
   SetupMobileHeader,
 } from '@/components/fitness/setup/FitnessSetupShell';
+import FitnessProfileView from '@/components/fitness/FitnessProfileView';
+import FitnessModuleShell from '@/components/fitness/FitnessModuleShell';
 import ProgressHeader from '@/components/fitness/setup/ProgressHeader';
 import StepNavigation from '@/components/fitness/setup/StepNavigation';
 import ActivityStep from '@/components/fitness/setup/steps/ActivityStep';
@@ -12,13 +14,13 @@ import AllergyStep from '@/components/fitness/setup/steps/AllergyStep';
 import BasicInfoStep from '@/components/fitness/setup/steps/BasicInfoStep';
 import DietStep from '@/components/fitness/setup/steps/DietStep';
 import GoalStep from '@/components/fitness/setup/steps/GoalStep';
-import PhysiqueGoalStep from '@/components/fitness/setup/steps/PhysiqueGoalStep';
 import ProcessingStep from '@/components/fitness/setup/steps/ProcessingStep';
 import ReviewStep from '@/components/fitness/setup/steps/ReviewStep';
 import SuccessStep from '@/components/fitness/setup/steps/SuccessStep';
 import WelcomeStep from '@/components/fitness/setup/steps/WelcomeStep';
 import { useToast } from '@/components/ui/Toast';
 import { useFitnessSetup } from '@/hooks/useFitnessSetup';
+import { FITNESS_SETUP_STEPS } from '@/lib/fitness/constants';
 import { getInitialFitnessSetupValues, hasCompletedFitnessOnboarding } from '@/lib/fitness/profileMapper';
 import { toFitnessProfilePayload } from '@/lib/fitness/schemas/fitness.schema';
 import {
@@ -29,7 +31,7 @@ import { getApiErrorMessage } from '@/lib/services/getApiErrorMessage';
 import {
   useCreateFitnessProfileMutation,
   useGetFitnessProfileQuery,
-  useGetPhysiqueGoalsQuery,
+  useGetFitnessGoalsQuery,
   useUpdateFitnessProfileMutation,
 } from '@/lib/services/fitnessApi';
 
@@ -42,6 +44,7 @@ export default function FitnessSetupWizard() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasHydratedProfile, setHasHydratedProfile] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isEditingWizard, setIsEditingWizard] = useState(false);
 
   const [savedProfileId, setSavedProfileId] = useState<string | null>(null);
 
@@ -51,25 +54,16 @@ export default function FitnessSetupWizard() {
     isFetching: isProfileFetching,
     isError: isProfileError,
     refetch: refetchProfile,
-  } = useGetFitnessProfileQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-  });
+  } = useGetFitnessProfileQuery();
 
-  const profileIsComplete =
-    profile && hasCompletedFitnessOnboarding(profile);
-
-  useEffect(() => {
-    void refetchProfile();
-  }, [refetchProfile]);
+  const profileIsComplete = hasCompletedFitnessOnboarding(profile);
 
   const {
-    data: physiqueGoals = [],
+    data: fitnessGoals = [],
     isLoading: isGoalsLoading,
     isError: isGoalsError,
     refetch: refetchGoals,
-  } = useGetPhysiqueGoalsQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-  });
+  } = useGetFitnessGoalsQuery();
 
   const [createProfile, { isLoading: isCreating }] =
     useCreateFitnessProfileMutation();
@@ -81,6 +75,7 @@ export default function FitnessSetupWizard() {
   const {
     form,
     currentStep,
+    currentStepIndex,
     progressPercent,
     stepErrors,
     goNext,
@@ -90,6 +85,10 @@ export default function FitnessSetupWizard() {
     isFirstStep,
     isLastStep,
   } = setup;
+
+  const isFirstEditStep = Boolean(
+    isEditingWizard && profileIsComplete && currentStep === 'basic-info',
+  );
 
   useEffect(() => {
     if (isProfileLoading || isProfileFetching || hasHydratedProfile) return;
@@ -192,6 +191,34 @@ export default function FitnessSetupWizard() {
     goNext();
   }
 
+  function handleStartEdit() {
+    setIsEditingWizard(true);
+    goToStep('basic-info');
+  }
+
+  function handleExitEditWizard() {
+    if (profile) {
+      form.reset(getInitialFitnessSetupValues(profile));
+    }
+    setIsEditingWizard(false);
+  }
+
+  function handlePrevious() {
+    if (!isEditingWizard || !profileIsComplete) {
+      goPrevious();
+      return;
+    }
+
+    const previousStep = FITNESS_SETUP_STEPS[currentStepIndex - 1];
+
+    if (!previousStep || previousStep.id === 'welcome') {
+      handleExitEditWizard();
+      return;
+    }
+
+    goPrevious();
+  }
+
   if (isProfileLoading || isProfileFetching || !hasHydratedProfile || isRedirecting) {
     return (
       <FitnessSetupSkeleton
@@ -201,6 +228,14 @@ export default function FitnessSetupWizard() {
             : 'Checking for existing profile...'
         }
       />
+    );
+  }
+
+  if (profileIsComplete && isEditMode && !isEditingWizard && profile) {
+    return (
+      <FitnessModuleShell activeNav="setup">
+        <FitnessProfileView profile={profile} onEdit={handleStartEdit} />
+      </FitnessModuleShell>
     );
   }
 
@@ -224,9 +259,16 @@ export default function FitnessSetupWizard() {
         footer={<div />}
       >
         <SuccessStep
-          onContinue={() =>
-            router.replace(isEditMode ? '/fitness/setup?mode=edit' : '/fitness/transformation')
-          }
+          onContinue={() => {
+            if (isEditMode) {
+              setIsSuccess(false);
+              setIsEditingWizard(false);
+              void refetchProfile();
+              return;
+            }
+
+            router.replace('/fitness/transformation');
+          }}
         />
       </FitnessSetupShell>
     );
@@ -238,9 +280,9 @@ export default function FitnessSetupWizard() {
       progressPercent={progressPercent}
       footer={
         <StepNavigation
-          showPrevious={!isFirstStep}
+          showPrevious={!isFirstStep || isFirstEditStep}
           showNext
-          previousLabel="Previous"
+          previousLabel={isFirstEditStep ? 'Back to profile' : 'Previous'}
           nextLabel={
             currentStep === 'welcome'
               ? 'Get Started'
@@ -249,7 +291,7 @@ export default function FitnessSetupWizard() {
                 : 'Next'
           }
           isSubmitting={isCreating || isUpdating}
-          onPrevious={goPrevious}
+          onPrevious={handlePrevious}
           onNext={handleNext}
         />
       }
@@ -269,7 +311,7 @@ export default function FitnessSetupWizard() {
             Retry
           </button>
         </div>
-      ) : profile && isEditMode ? (
+      ) : isEditingWizard && profile ? (
         <div className="mb-4 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
           Editing your saved fitness profile.
         </div>
@@ -284,16 +326,13 @@ export default function FitnessSetupWizard() {
           <ActivityStep form={form} error={stepErrors.activityLevel} />
         ) : null}
         {currentStep === 'goal' ? (
-          <GoalStep form={form} error={stepErrors.fitnessGoal} />
-        ) : null}
-        {currentStep === 'physique-goal' ? (
-          <PhysiqueGoalStep
+          <GoalStep
             form={form}
-            goals={physiqueGoals}
+            goals={fitnessGoals}
             isLoading={isGoalsLoading}
             isError={isGoalsError}
             onRetry={() => void refetchGoals()}
-            error={stepErrors.physiqueGoalId}
+            error={stepErrors.physiqueGoalId ?? stepErrors.fitnessGoal}
           />
         ) : null}
         {currentStep === 'diet' ? (
@@ -305,7 +344,7 @@ export default function FitnessSetupWizard() {
         {currentStep === 'review' ? (
           <ReviewStep
             values={form.getValues()}
-            physiqueGoals={physiqueGoals}
+            physiqueGoals={fitnessGoals}
             onEdit={goToStep}
           />
         ) : null}

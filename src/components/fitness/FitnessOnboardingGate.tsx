@@ -22,9 +22,7 @@ export default function FitnessOnboardingGate({
     isUninitialized,
     isFetching,
     isError,
-  } = useGetFitnessProfileQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-  });
+  } = useGetFitnessProfileQuery();
 
   const profileIsComplete = hasCompletedFitnessOnboarding(profile);
   const isCheckingProfile =

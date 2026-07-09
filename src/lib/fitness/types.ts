@@ -3,7 +3,6 @@ export type FitnessSetupStepId =
   | 'basic-info'
   | 'activity'
   | 'goal'
-  | 'physique-goal'
   | 'diet'
   | 'allergy'
   | 'review';

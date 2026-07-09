@@ -55,11 +55,24 @@ function resolveFallbackImage(slug: string, id: string) {
   );
 }
 
+function shouldPreferLocalPhysiqueImage(url: string) {
+  try {
+    const hostname = new URL(url).hostname;
+    return hostname === 'cdn.fitforge.app';
+  } catch {
+    return false;
+  }
+}
+
 export function resolvePhysiqueGoalImage(goal: Pick<PhysiqueGoal, 'id' | 'title' | 'imageUrl'>) {
   const slug = slugify(goal.title || goal.id);
   const fallback = resolveFallbackImage(slug, goal.id);
 
-  if (isUsableRemoteImageUrl(goal.imageUrl) && !goal.imageUrl.startsWith('/uploads')) {
+  if (
+    isUsableRemoteImageUrl(goal.imageUrl) &&
+    !goal.imageUrl.startsWith('/uploads') &&
+    !shouldPreferLocalPhysiqueImage(goal.imageUrl)
+  ) {
     return goal.imageUrl;
   }
 

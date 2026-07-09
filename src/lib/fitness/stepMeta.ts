@@ -20,13 +20,9 @@ export const FITNESS_STEP_META: Record<
       'This helps us calculate your daily caloric needs with clinical precision.',
   },
   goal: {
-    title: 'What is your primary fitness goal?',
-    subtitle: 'Choose the outcome you want to optimize for over the next phase.',
-  },
-  'physique-goal': {
-    title: 'Physique Goal',
+    title: 'Choose your fitness goal',
     subtitle:
-      'Select the aesthetic trajectory that matches your long-term vision.',
+      'Select the physique trajectory that matches your long-term vision.',
   },
   diet: {
     title: 'Diet & Training Preferences',

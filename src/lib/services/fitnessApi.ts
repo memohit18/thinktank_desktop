@@ -12,10 +12,9 @@ import {
   unwrapPhysiqueGoals,
 } from '@/lib/fitness/fitnessResponse';
 import { apiSlice } from './apiSlice';
+import { RTK_QUERY_FRESH_CACHE } from './rtkQueryDefaults';
 
-const fitnessProfileQueryOptions = {
-  refetchOnMountOrArgChange: true as const,
-};
+const fitnessProfileQueryOptions = RTK_QUERY_FRESH_CACHE;
 
 const PROFILE_READ_PATHS = ['/fitness/profile', '/fitness-profile'] as const;
 
@@ -70,7 +69,7 @@ async function fetchFitnessProfile(
 
 export const fitnessApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getPhysiqueGoals: builder.query<PhysiqueGoal[], void>({
+    getFitnessGoals: builder.query<PhysiqueGoal[], void>({
       query: () => '/fitness/goals',
       transformResponse: (response: unknown) => unwrapPhysiqueGoals(response),
       providesTags: ['FitnessGoals'],
@@ -124,7 +123,7 @@ export const fitnessApi = apiSlice.injectEndpoints({
 });
 
 export const {
-  useGetPhysiqueGoalsQuery,
+  useGetFitnessGoalsQuery,
   useGetFitnessProfileQuery,
   useCreateFitnessProfileMutation,
   useUpdateFitnessProfileMutation,

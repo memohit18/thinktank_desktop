@@ -22,7 +22,7 @@ export const FITNESS_MODULE_NAV_ITEMS = [
   },
   {
     id: 'setup' as const,
-    label: 'Profile Setup',
+    label: 'My Profile',
     icon: Dumbbell,
     href: '/fitness/setup?mode=edit',
     disabled: false,

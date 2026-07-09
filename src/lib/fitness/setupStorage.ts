@@ -17,6 +17,16 @@ export const EMPTY_FITNESS_SETUP_VALUES: FitnessSetupFormValues = {
   allergies: '',
 };
 
+export function normalizeFitnessSetupStep(
+  step: string,
+): FitnessSetupDraft['step'] {
+  if (step === 'physique-goal') {
+    return 'goal';
+  }
+
+  return step as FitnessSetupDraft['step'];
+}
+
 export function readFitnessSetupDraft(): FitnessSetupDraft | null {
   if (typeof window === 'undefined') return null;
 
@@ -24,7 +34,11 @@ export function readFitnessSetupDraft(): FitnessSetupDraft | null {
     const raw = window.localStorage.getItem(FITNESS_SETUP_STORAGE_KEY);
     if (!raw) return null;
 
-    return JSON.parse(raw) as FitnessSetupDraft;
+    const draft = JSON.parse(raw) as FitnessSetupDraft;
+    return {
+      ...draft,
+      step: normalizeFitnessSetupStep(draft.step),
+    };
   } catch {
     return null;
   }

@@ -10,6 +10,7 @@ import {
   refreshAccessToken,
   shouldAttemptTokenRefresh,
 } from '@/lib/auth/refreshToken';
+import { RTK_QUERY_DEFAULTS } from '@/lib/services/rtkQueryDefaults';
 
 function isPublicAuthRequest(endpoint: string) {
   return endpoint === 'login' || endpoint === 'signup';
@@ -30,6 +31,11 @@ const rawBaseQuery = fetchBaseQuery({
 
     return headers;
   },
+  fetchFn: async (input, init) =>
+    fetch(input, {
+      ...init,
+      cache: 'no-store',
+    }),
 });
 
 function getRequestUrl(args: string | FetchArgs) {
@@ -71,6 +77,8 @@ const baseQuery: BaseQueryFn<
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery,
+  ...RTK_QUERY_DEFAULTS,
+  keepUnusedDataFor: 60,
   tagTypes: ['Auth', 'CodeSession', 'QuestionFilters', 'Problems', 'Profile', 'Submissions', 'UserProgress', 'Roadmaps', 'FitnessProfile', 'FitnessGoals', 'Transformation'],
   endpoints: () => ({}),
 });

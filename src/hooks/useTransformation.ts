@@ -2,10 +2,6 @@
 
 import { useCallback, useMemo } from 'react';
 import { useToast } from '@/components/ui/Toast';
-import {
-  EMPTY_TRANSFORMATION,
-  resolveTransformationView,
-} from '@/lib/fitness/transformation/emptyTransformation';
 import { getApiErrorMessage } from '@/lib/services/getApiErrorMessage';
 import {
   useGenerateTransformationMutation,
@@ -48,7 +44,7 @@ export function useTransformation() {
 
   const resolvedTransformation = useMemo(() => {
     if (!transformation?.id) {
-      return EMPTY_TRANSFORMATION;
+      return null;
     }
 
     return {
@@ -57,17 +53,14 @@ export function useTransformation() {
     };
   }, [milestones, transformation]);
 
-  const displayTransformation = resolveTransformationView(
-    transformation?.id ? resolvedTransformation : null,
-  );
-
   const hasLoaded = !isLoading && !isUninitialized;
-  const isUsingFallback = hasLoaded && (isError || !transformation?.id);
+  const hasTransformation = Boolean(transformation?.id);
+  const isUsingFallback = hasLoaded && isError;
 
   const generate = useCallback(async () => {
     try {
       await generateTransformation().unwrap();
-      showToast('Your transformation plan has been generated.');
+      showToast('Transformation plan generated successfully.');
       await refetch();
       return true;
     } catch (error) {
@@ -95,7 +88,7 @@ export function useTransformation() {
   }, [generateTransformation, refetch, showToast]);
 
   return {
-    transformation: displayTransformation,
+    transformation: resolvedTransformation,
     history: historyResponse?.items ?? [],
     historyMeta: historyResponse?.meta,
     isLoading: isLoading || isUninitialized,
@@ -104,7 +97,7 @@ export function useTransformation() {
     isError,
     isUsingFallback,
     isGenerating: generateState.isLoading,
-    hasTransformation: Boolean(transformation?.id),
+    hasTransformation,
     generate,
     regenerate,
     refetch,

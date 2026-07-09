@@ -5,7 +5,8 @@ import {
   FITNESS_GOAL_OPTIONS,
   GENDER_OPTIONS,
 } from '@/lib/fitness/constants';
-import type { FitnessSetupFormValues } from '@/lib/fitness/types';
+import { mapFitnessProfileToFormValues } from '@/lib/fitness/profileMapper';
+import type { FitnessProfile, FitnessSetupFormValues } from '@/lib/fitness/types';
 import type { PhysiqueGoal } from '@/lib/fitness/types';
 
 function labelFor<T extends string>(
@@ -23,6 +24,18 @@ export function buildFitnessReviewSections(
     (goal) => goal.id === values.physiqueGoalId,
   );
 
+  return buildReviewSections(values, physiqueGoal);
+}
+
+export function buildFitnessReviewSectionsFromProfile(profile: FitnessProfile) {
+  const values = mapFitnessProfileToFormValues(profile);
+  return buildReviewSections(values, profile.physiqueGoal ?? undefined);
+}
+
+function buildReviewSections(
+  values: FitnessSetupFormValues,
+  physiqueGoal?: PhysiqueGoal | null,
+) {
   return [
     {
       id: 'basic-info' as const,
@@ -58,18 +71,12 @@ export function buildFitnessReviewSections(
       title: 'Fitness goal',
       items: [
         {
-          label: 'Primary goal',
-          value: labelFor(FITNESS_GOAL_OPTIONS, values.fitnessGoal),
-        },
-      ],
-    },
-    {
-      id: 'physique-goal' as const,
-      title: 'Physique goal',
-      items: [
-        {
-          label: 'Physique',
+          label: 'Selected goal',
           value: physiqueGoal?.title ?? '—',
+        },
+        {
+          label: 'Training focus',
+          value: labelFor(FITNESS_GOAL_OPTIONS, values.fitnessGoal),
         },
       ],
     },

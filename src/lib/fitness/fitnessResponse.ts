@@ -1,5 +1,5 @@
 import type { FitnessProfile, PhysiqueGoal, PhysiqueGoalsResponse } from '@/lib/fitness/types';
-import { normalizePhysiqueGoals } from '@/lib/fitness/physiqueGoalMapper';
+import { normalizePhysiqueGoal, normalizePhysiqueGoals } from '@/lib/fitness/physiqueGoalMapper';
 
 export type FitnessApiEnvelope<T> = {
   success: boolean;
@@ -107,17 +107,57 @@ export function unwrapFitnessProfile(response: unknown): FitnessProfile | null {
     height_cm?: number;
     weight_kg?: number;
     physique_goal_id?: string;
+    activity_level?: string;
+    fitness_goal?: string;
+    diet_type?: string;
+    workout_experience?: string;
+    workout_days_per_week?: number;
+    target_weight_kg?: number | null;
+    target_body_fat_percent?: number | null;
+    physique_goal?: unknown;
+    created_at?: string;
+    updated_at?: string;
   };
+
+  const nestedPhysiqueGoal =
+    profile.physiqueGoal ?? record.physique_goal ?? null;
 
   return {
     ...profile,
     id: String(profile.id),
     age: Number(profile.age ?? record.age),
+    gender: profile.gender ?? (record.gender as FitnessProfile['gender']),
     heightCm: Number(profile.heightCm ?? record.height_cm ?? 0),
     weightKg: Number(profile.weightKg ?? record.weight_kg ?? 0),
-    physiqueGoalId: String(profile.physiqueGoalId ?? record.physique_goal_id ?? ''),
+    activityLevel:
+      profile.activityLevel ??
+      (record.activity_level as FitnessProfile['activityLevel']),
+    fitnessGoal:
+      profile.fitnessGoal ??
+      (record.fitness_goal as FitnessProfile['fitnessGoal']),
+    physiqueGoalId: String(
+      profile.physiqueGoalId ?? record.physique_goal_id ?? '',
+    ),
+    dietType:
+      profile.dietType ?? (record.diet_type as FitnessProfile['dietType']),
+    workoutExperience:
+      profile.workoutExperience ??
+      (record.workout_experience as FitnessProfile['workoutExperience']),
+    workoutDaysPerWeek: Number(
+      profile.workoutDaysPerWeek ?? record.workout_days_per_week ?? 0,
+    ),
+    targetWeightKg:
+      profile.targetWeightKg ?? record.target_weight_kg ?? null,
+    targetBodyFatPercent:
+      profile.targetBodyFatPercent ?? record.target_body_fat_percent ?? null,
+    allergies: profile.allergies ?? record.allergies ?? null,
     onboardingCompleted: Boolean(
       profile.onboardingCompleted ?? record.onboarding_completed,
     ),
+    physiqueGoal: nestedPhysiqueGoal
+      ? normalizePhysiqueGoal(nestedPhysiqueGoal)
+      : null,
+    createdAt: profile.createdAt ?? record.created_at,
+    updatedAt: profile.updatedAt ?? record.updated_at,
   };
 }
