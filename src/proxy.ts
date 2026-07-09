@@ -63,6 +63,8 @@ export const config = {
     '/code/:path*',
     '/fitforge',
     '/fitforge/:path*',
+    '/fitness',
+    '/fitness/:path*',
     '/settings',
     '/settings/:path*',
     '/api/auth/:path*',
@@ -70,6 +72,8 @@ export const config = {
     '/api/profile',
     '/api/user-progress/:path*',
     '/api/roadmaps/:path*',
+    '/api/fitness/:path*',
+    '/api/transformation/:path*',
     '/api/code/:path*',
   ],
 };

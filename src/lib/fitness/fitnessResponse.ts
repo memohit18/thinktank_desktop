@@ -1,0 +1,123 @@
+import type { FitnessProfile, PhysiqueGoal, PhysiqueGoalsResponse } from '@/lib/fitness/types';
+import { normalizePhysiqueGoals } from '@/lib/fitness/physiqueGoalMapper';
+
+export type FitnessApiEnvelope<T> = {
+  success: boolean;
+  message: string;
+  data: T;
+};
+
+export type FitnessApiErrorEnvelope = {
+  statusCode: number;
+  error: string;
+  message: string;
+  path?: string;
+  timestamp?: string;
+};
+
+export function isFitnessErrorEnvelope(
+  response: unknown,
+): response is FitnessApiErrorEnvelope {
+  return (
+    !!response &&
+    typeof response === 'object' &&
+    'statusCode' in response &&
+    typeof (response as FitnessApiErrorEnvelope).statusCode === 'number'
+  );
+}
+
+export function isMissingFitnessProfileStatus(status: unknown) {
+  return status === 404;
+}
+
+export function unwrapFitnessData<T>(response: unknown): T | null {
+  if (!response || typeof response !== 'object') {
+    return null;
+  }
+
+  if (isFitnessErrorEnvelope(response)) {
+    return null;
+  }
+
+  if ('success' in response) {
+    const envelope = response as FitnessApiEnvelope<T>;
+
+    if (!envelope.success) {
+      return null;
+    }
+
+    if ('data' in envelope) {
+      return envelope.data ?? null;
+    }
+
+    return null;
+  }
+
+  return response as T;
+}
+
+export function unwrapPhysiqueGoals(response: unknown): PhysiqueGoal[] {
+  const data = unwrapFitnessData<
+    PhysiqueGoal[] | PhysiqueGoalsResponse | { goals: PhysiqueGoal[] }
+  >(response);
+
+  if (!data) {
+    return [];
+  }
+
+  if (Array.isArray(data)) {
+    return normalizePhysiqueGoals(data);
+  }
+
+  if (typeof data === 'object' && 'goals' in data) {
+    return normalizePhysiqueGoals(data.goals ?? []);
+  }
+
+  if (typeof data === 'object' && 'items' in data) {
+    const items = (data as { items?: unknown[] }).items;
+    return normalizePhysiqueGoals(items ?? []);
+  }
+
+  return [];
+}
+
+export function unwrapFitnessProfile(response: unknown): FitnessProfile | null {
+  const data = unwrapFitnessData<
+    FitnessProfile | null | { profile: FitnessProfile | null }
+  >(response);
+
+  if (!data) {
+    return null;
+  }
+
+  let profile: FitnessProfile | null = null;
+
+  if (typeof data === 'object' && 'profile' in data) {
+    profile = data.profile ?? null;
+  } else if (typeof data === 'object' && 'id' in data) {
+    profile = data as FitnessProfile;
+  }
+
+  if (!profile?.id) {
+    return null;
+  }
+
+  const record = profile as FitnessProfile & {
+    onboarding_completed?: boolean;
+    height_cm?: number;
+    weight_kg?: number;
+    physique_goal_id?: string;
+  };
+
+  return {
+    ...profile,
+    id: String(profile.id),
+    age: Number(profile.age ?? record.age),
+    heightCm: Number(profile.heightCm ?? record.height_cm ?? 0),
+    weightKg: Number(profile.weightKg ?? record.weight_kg ?? 0),
+    physiqueGoalId: String(profile.physiqueGoalId ?? record.physique_goal_id ?? ''),
+    onboardingCompleted: Boolean(
+      profile.onboardingCompleted ?? record.onboarding_completed,
+    ),
+  };
+}

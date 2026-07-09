@@ -30,7 +30,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     moduleId: 'fitforge',
     label: 'Fitness',
     href: '/fitforge',
-    description: 'AI diet planner, nutrition, workouts, and coaching.',
+    description: 'Fitness onboarding, workouts, nutrition, and coaching.',
     visible: true,
     icon: 'fitforge',
   },
@@ -42,7 +42,12 @@ export function isNavItemActive(pathname: string, href: string) {
   }
 
   if (href === '/fitforge') {
-    return pathname === '/fitforge' || pathname.startsWith('/fitforge/');
+    return (
+      pathname === '/fitforge' ||
+      pathname.startsWith('/fitforge/') ||
+      pathname === '/fitness' ||
+      pathname.startsWith('/fitness/')
+    );
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);

@@ -36,13 +36,23 @@ function getRequestUrl(args: string | FetchArgs) {
   return typeof args === 'string' ? args : args.url;
 }
 
+function getRequestMethod(args: string | FetchArgs) {
+  return typeof args === 'string' ? 'GET' : args.method ?? 'GET';
+}
+
 const baseQuery: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
-  let result = await rawBaseQuery(args, api, extraOptions);
   const requestUrl = getRequestUrl(args);
+  const requestMethod = getRequestMethod(args);
+
+  if (process.env.NODE_ENV === 'development') {
+    console.info(`[API] ${requestMethod} /api${requestUrl}`);
+  }
+
+  let result = await rawBaseQuery(args, api, extraOptions);
 
   if (
     result.error &&
@@ -61,6 +71,6 @@ const baseQuery: BaseQueryFn<
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery,
-  tagTypes: ['Auth', 'CodeSession', 'QuestionFilters', 'Problems', 'Profile', 'Submissions', 'UserProgress', 'Roadmaps'],
+  tagTypes: ['Auth', 'CodeSession', 'QuestionFilters', 'Problems', 'Profile', 'Submissions', 'UserProgress', 'Roadmaps', 'FitnessProfile', 'FitnessGoals', 'Transformation'],
   endpoints: () => ({}),
 });

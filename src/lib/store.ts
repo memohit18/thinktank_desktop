@@ -7,6 +7,8 @@ import './services/problemsApi';
 import './services/profileApi';
 import './services/userProgressApi';
 import './services/roadmapsApi';
+import './services/fitnessApi';
+import './services/transformationApi';
 
 export const store = configureStore({
   reducer: {
