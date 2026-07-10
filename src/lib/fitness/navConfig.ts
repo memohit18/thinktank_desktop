@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   Dumbbell,
   LayoutDashboard,
   LineChart,
@@ -12,6 +13,7 @@ export type FitnessModuleNavId =
   | 'setup'
   | 'nutrition'
   | 'diet'
+  | 'meals'
   | 'analytics';
 
 export const FITNESS_MODULE_NAV_ITEMS = [
@@ -41,6 +43,13 @@ export const FITNESS_MODULE_NAV_ITEMS = [
     label: 'Diet',
     icon: Salad,
     href: '/fitness/diet',
+    disabled: false,
+  },
+  {
+    id: 'meals' as const,
+    label: 'Meals',
+    icon: CalendarDays,
+    href: '/fitness/meals',
     disabled: false,
   },
   {
@@ -79,6 +88,13 @@ export const FITNESS_SETUP_NAV_ITEMS = [
     label: 'Diet',
     icon: Salad,
     href: '/fitness/diet',
+    disabled: false,
+  },
+  {
+    id: 'meals' as const,
+    label: 'Meals',
+    icon: CalendarDays,
+    href: '/fitness/meals',
     disabled: false,
   },
   {

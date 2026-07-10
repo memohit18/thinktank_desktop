@@ -765,6 +765,8 @@ function normalizePlannerMealSlot(raw: unknown): DietMeal | null {
     carbs: readNumber(macros?.carbs ?? record.carbs ?? firstItem?.carbs),
     fats: readNumber(macros?.fats ?? record.fats ?? firstItem?.fats),
     canSwap: Boolean(record.canSwap ?? record.can_swap),
+    canEdit: Boolean(record.canEdit ?? record.can_edit),
+    tag: readString(record.tag) || null,
     status: readString(record.status) || null,
   };
 }
@@ -954,6 +956,25 @@ export function normalizeDietPlanner(raw: unknown): DietPlanner | null {
       ? (record.coachInsight as Record<string, unknown>)
       : null;
 
+  const sodiumRaw =
+    vitals.sodium && typeof vitals.sodium === 'object'
+      ? (vitals.sodium as Record<string, unknown>)
+      : null;
+  const caffeineRaw =
+    vitals.caffeine && typeof vitals.caffeine === 'object'
+      ? (vitals.caffeine as Record<string, unknown>)
+      : null;
+
+  const actionsRaw =
+    record.actions && typeof record.actions === 'object'
+      ? (record.actions as Record<string, unknown>)
+      : null;
+
+  const swapRaw =
+    record.swapSuggestion && typeof record.swapSuggestion === 'object'
+      ? (record.swapSuggestion as Record<string, unknown>)
+      : null;
+
   return {
     date,
     dietPlanId,
@@ -990,6 +1011,65 @@ export function normalizeDietPlanner(raw: unknown): DietPlanner | null {
           status: readString(coachRaw.status) || null,
           message: readString(coachRaw.message) || null,
           actionable: Boolean(coachRaw.actionable),
+          suggestedAction:
+            readString(coachRaw.suggestedAction ?? coachRaw.suggested_action) ||
+            null,
+        }
+      : null,
+    vitals: {
+      fiber: nutrition.fiber ?? null,
+      sodium: sodiumRaw
+        ? {
+            status: readString(sodiumRaw.status) || null,
+            label: readString(sodiumRaw.label) || null,
+            estimated: Boolean(sodiumRaw.estimated),
+          }
+        : null,
+      caffeine: caffeineRaw
+        ? {
+            status: readString(caffeineRaw.status) || null,
+            label: readString(caffeineRaw.label) || null,
+            current: readNullableNumber(
+              caffeineRaw.currentMg ?? caffeineRaw.current_mg ?? caffeineRaw.current,
+            ),
+            note: readString(caffeineRaw.note) || null,
+            estimated: Boolean(caffeineRaw.estimated),
+          }
+        : null,
+    },
+    dietCompliance: readNullableNumber(
+      progress.dietCompliance ?? progress.diet_compliance,
+    ),
+    mealsCompleted: readNullableNumber(progress.mealsCompleted),
+    mealsSkipped: readNullableNumber(progress.mealsSkipped),
+    transformation: {
+      id: readString(transformation.id) || null,
+      estimatedWeeks: readNullableNumber(
+        transformation.estimatedWeeks ?? transformation.estimated_weeks,
+      ),
+      targetWeightKg: readNullableNumber(
+        transformation.targetWeightKg ?? transformation.target_weight_kg,
+      ),
+      currentWeightKg: readNullableNumber(
+        transformation.currentWeightKg ?? transformation.current_weight_kg,
+      ),
+    },
+    actions: actionsRaw
+      ? {
+          historyUrl: readString(actionsRaw.historyUrl ?? actionsRaw.history_url) || null,
+          editPlanUrl:
+            readString(actionsRaw.editPlanUrl ?? actionsRaw.edit_plan_url) || null,
+          checkinUrl:
+            readString(actionsRaw.checkinUrl ?? actionsRaw.checkin_url) || null,
+          logMealUrl:
+            readString(actionsRaw.logMealUrl ?? actionsRaw.log_meal_url) || null,
+        }
+      : null,
+    swapSuggestion: swapRaw
+      ? {
+          message: readString(swapRaw.message) || null,
+          mealType: readString(swapRaw.mealType ?? swapRaw.meal_type) || null,
+          foodName: readString(swapRaw.foodName ?? swapRaw.food_name) || null,
         }
       : null,
   };

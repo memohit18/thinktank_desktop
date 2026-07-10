@@ -16,11 +16,13 @@ export type DietMeal = {
   imageUrl?: string | null;
   servingSize?: string | null;
   scheduledTime?: string | null;
+  tag?: string | null;
   calories: number;
   protein: number;
   carbs: number;
   fats: number;
   canSwap?: boolean;
+  canEdit?: boolean;
   status?: string | null;
 };
 
@@ -86,7 +88,42 @@ export type DietCoachInsight = {
   status?: string | null;
   message?: string | null;
   actionable?: boolean;
+  suggestedAction?: string | null;
 };
+
+export type DietVitalStatus = {
+  status?: string | null;
+  label?: string | null;
+  current?: number | null;
+  note?: string | null;
+  estimated?: boolean;
+};
+
+export type DietVitals = {
+  fiber?: DietMacroProgress | null;
+  sodium?: DietVitalStatus | null;
+  caffeine?: DietVitalStatus | null;
+};
+
+export type DietTransformationSummary = {
+  id?: string | null;
+  estimatedWeeks?: number | null;
+  targetWeightKg?: number | null;
+  currentWeightKg?: number | null;
+};
+
+export type DietPlannerActions = {
+  historyUrl?: string | null;
+  editPlanUrl?: string | null;
+  checkinUrl?: string | null;
+  logMealUrl?: string | null;
+};
+
+export type DietSwapSuggestion = {
+  message?: string | null;
+  mealType?: string | null;
+  foodName?: string | null;
+} | null;
 
 /** Full Diet Planner screen payload from GET /diet/planner. */
 export type DietPlanner = {
@@ -113,6 +150,13 @@ export type DietPlanner = {
   hydration?: DietMacroProgress | null;
   hydrationQuickAddsMl?: number[];
   coachInsight?: DietCoachInsight | null;
+  vitals?: DietVitals | null;
+  dietCompliance?: number | null;
+  mealsCompleted?: number | null;
+  mealsSkipped?: number | null;
+  transformation?: DietTransformationSummary | null;
+  actions?: DietPlannerActions | null;
+  swapSuggestion?: DietSwapSuggestion;
 };
 
 export type DietHistoryItem = DietPlan & {

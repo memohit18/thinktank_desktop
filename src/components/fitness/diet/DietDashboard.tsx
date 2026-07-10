@@ -9,6 +9,7 @@ import HistoryDrawer from '@/components/fitness/diet/HistoryDrawer';
 import MealCard from '@/components/fitness/diet/MealCard';
 import MealTabs from '@/components/fitness/diet/MealTabs';
 import NutritionSummary from '@/components/fitness/diet/NutritionSummary';
+import TransformationCard from '@/components/fitness/diet/TransformationCard';
 import { useToast } from '@/components/ui/Toast';
 import {
   DIET_DAY_FULL_LABELS,
@@ -130,6 +131,7 @@ export default function DietDashboard({
     <div className="space-y-6">
       <DietHero
         diet={diet}
+        planner={planner}
         isRegenerating={isRegenerating}
         onRegenerate={onRegenerate}
         onOpenHistory={onOpenHistory}
@@ -159,6 +161,17 @@ export default function DietDashboard({
             />
           </div>
 
+          {planner?.swapSuggestion?.message ? (
+            <div className="rounded-2xl border border-accent/30 bg-accent/5 px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-accent">
+                Swap suggestion
+              </p>
+              <p className="mt-1 text-sm text-foreground">
+                {planner.swapSuggestion.message}
+              </p>
+            </div>
+          ) : null}
+
           {isPlannerFetching && meals.length === 0 ? (
             <div className="flex min-h-40 items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 px-6 text-center text-sm text-muted-foreground">
               Loading meals…
@@ -175,11 +188,7 @@ export default function DietDashboard({
                   meal={meal}
                   onReplace={
                     meal.canSwap
-                      ? () =>
-                          showToast(
-                            'Meal replace is not available from the API yet.',
-                            'error',
-                          )
+                      ? () => router.push('/fitness/meals')
                       : undefined
                   }
                 />
@@ -191,21 +200,39 @@ export default function DietDashboard({
         <aside className="space-y-4">
           {planner?.coachInsight?.message ? (
             <div className="rounded-2xl border border-border bg-card p-4">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Coach insight
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Coach insight
+                </p>
+                {planner.coachInsight.status ? (
+                  <span className="text-[10px] font-semibold uppercase text-accent">
+                    {planner.coachInsight.status.replace(/_/g, ' ')}
+                  </span>
+                ) : null}
+              </div>
               <p className="mt-2 text-sm text-foreground">
                 {planner.coachInsight.message}
               </p>
+              {planner.coachInsight.suggestedAction ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Suggested: {planner.coachInsight.suggestedAction}
+                </p>
+              ) : null}
             </div>
           ) : null}
           <NutritionSummary
             nutrition={diet.nutrition ?? planner?.nutrition}
             hydration={planner?.hydration}
             hydrationQuickAddsMl={planner?.hydrationQuickAddsMl}
+            vitals={planner?.vitals}
+            dietCompliance={planner?.dietCompliance}
+            mealsCompleted={planner?.mealsCompleted}
+            mealsAssigned={planner?.mealsPerDay}
+            mealsSkipped={planner?.mealsSkipped}
             isUpdatingHydration={isUpdatingHydration}
             onAddHydration={onAddHydration}
           />
+          <TransformationCard transformation={planner?.transformation} />
           <GroceryPreview
             grocery={diet.grocery}
             onGenerateList={() =>
@@ -217,6 +244,36 @@ export default function DietDashboard({
               )
             }
           />
+          {planner?.actions ? (
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Quick actions
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={onOpenHistory}
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                >
+                  History
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/fitness/meals')}
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                >
+                  Log meals
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/fitness/transformation')}
+                  className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                >
+                  Check-in
+                </button>
+              </div>
+            </div>
+          ) : null}
         </aside>
       </div>
 

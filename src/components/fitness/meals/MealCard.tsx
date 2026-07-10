@@ -1,11 +1,16 @@
 'use client';
 
 import { UtensilsCrossed } from 'lucide-react';
-import { DIET_MEAL_LABELS } from '@/lib/fitness/diet/constants';
-import type { DietMeal } from '@/lib/fitness/diet/types';
+import CompleteButton from '@/components/fitness/meals/CompleteButton';
+import SkipButton from '@/components/fitness/meals/SkipButton';
+import { MEAL_TYPE_LABELS } from '@/lib/fitness/meals/constants';
+import type { MealItem } from '@/lib/fitness/meals/types';
 
 type MealCardProps = {
-  meal: DietMeal;
+  meal: MealItem;
+  isActing?: boolean;
+  onComplete?: (mealId: string) => void;
+  onSkip?: (mealId: string) => void;
   onReplace?: (mealId: string) => void;
 };
 
@@ -20,8 +25,8 @@ function MacroChip({ label, value }: { label: string; value: string }) {
   );
 }
 
-function statusStyles(status?: string | null) {
-  const normalized = (status ?? '').toLowerCase();
+function statusStyles(status: string) {
+  const normalized = status.toLowerCase();
   if (normalized === 'completed') {
     return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
   }
@@ -31,38 +36,36 @@ function statusStyles(status?: string | null) {
   return 'border-border bg-muted text-muted-foreground';
 }
 
-export default function MealCard({ meal, onReplace }: MealCardProps) {
+export default function MealCard({
+  meal,
+  isActing = false,
+  onComplete,
+  onSkip,
+  onReplace,
+}: MealCardProps) {
+  const isDone =
+    meal.status === 'completed' ||
+    meal.status === 'skipped' ||
+    meal.status === 'replaced';
+
   return (
     <article className="overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            {DIET_MEAL_LABELS[meal.type]}
+            {MEAL_TYPE_LABELS[meal.type]}
           </p>
-          {meal.tag ? (
+          {meal.scheduledTime ? (
             <span className="rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-              {meal.tag}
+              {meal.scheduledTime}
             </span>
           ) : null}
         </div>
-        <div className="flex items-center gap-3">
-          {meal.status ? (
-            <span
-              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${statusStyles(meal.status)}`}
-            >
-              {meal.status}
-            </span>
-          ) : null}
-          {onReplace ? (
-            <button
-              type="button"
-              onClick={() => onReplace(meal.id)}
-              className="text-xs font-semibold text-accent transition-opacity hover:opacity-80"
-            >
-              Replace
-            </button>
-          ) : null}
-        </div>
+        <span
+          className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase ${statusStyles(meal.status)}`}
+        >
+          {meal.status}
+        </span>
       </div>
 
       <div className="flex flex-col gap-4 p-4 sm:flex-row">
@@ -83,14 +86,7 @@ export default function MealCard({ meal, onReplace }: MealCardProps) {
 
         <div className="min-w-0 flex-1 space-y-3">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-sm font-semibold text-foreground">{meal.name}</h3>
-              {meal.scheduledTime ? (
-                <span className="rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                  {meal.scheduledTime}
-                </span>
-              ) : null}
-            </div>
+            <h3 className="text-sm font-semibold text-foreground">{meal.name}</h3>
             {meal.servingSize ? (
               <p className="mt-1 text-xs text-muted-foreground">
                 Serving: {meal.servingSize}
@@ -104,6 +100,33 @@ export default function MealCard({ meal, onReplace }: MealCardProps) {
             <MacroChip label="C" value={`${Math.round(meal.carbs)}g`} />
             <MacroChip label="F" value={`${Math.round(meal.fats)}g`} />
           </div>
+
+          {!isDone ? (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {onComplete ? (
+                <CompleteButton
+                  isLoading={isActing}
+                  onClick={() => onComplete(meal.id)}
+                />
+              ) : null}
+              {onSkip ? (
+                <SkipButton
+                  isLoading={isActing}
+                  onClick={() => onSkip(meal.id)}
+                />
+              ) : null}
+              {onReplace && meal.canSwap !== false ? (
+                <button
+                  type="button"
+                  disabled={isActing}
+                  onClick={() => onReplace(meal.id)}
+                  className="inline-flex flex-1 items-center justify-center rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs font-semibold text-accent transition-colors hover:bg-muted disabled:opacity-50"
+                >
+                  Replace
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </article>

@@ -2,11 +2,12 @@
 
 import { Download, History } from 'lucide-react';
 import { formatGoalLabel } from '@/lib/fitness/diet/dietResponse';
-import type { DietPlan } from '@/lib/fitness/diet/types';
+import type { DietPlan, DietPlanner } from '@/lib/fitness/diet/types';
 import RegenerateButton from '@/components/fitness/diet/RegenerateButton';
 
 type DietHeroProps = {
   diet: DietPlan;
+  planner?: DietPlanner | null;
   isRegenerating?: boolean;
   onRegenerate: () => void;
   onOpenHistory: () => void;
@@ -28,11 +29,17 @@ function StatCard({ label, value }: { label: string; value: string }) {
 
 export default function DietHero({
   diet,
+  planner,
   isRegenerating = false,
   onRegenerate,
   onOpenHistory,
   onDownloadPdf,
 }: DietHeroProps) {
+  const label = planner?.label ?? diet.label;
+  const phase = planner?.phase ?? diet.phase;
+  const statusMessage = planner?.statusMessage ?? diet.statusMessage;
+  const compliance = planner?.dietCompliance;
+
   return (
     <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-8">
       <div className="absolute inset-0 bg-gradient-to-br from-accent/15 via-transparent to-accent/5" />
@@ -48,20 +55,34 @@ export default function DietHero({
                   v{diet.version}
                 </span>
               ) : null}
+              {label ? (
+                <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                  {label}
+                </span>
+              ) : null}
               <span className="rounded-full border border-border bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
                 {diet.status || 'ACTIVE'}
               </span>
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-                Your AI-Generated Diet Plan
+                {label || 'Your AI-Generated Diet Plan'}
               </h1>
+              {phase ? (
+                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-accent">
+                  {phase}
+                </p>
+              ) : null}
               <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                Optimized for{' '}
-                <span className="font-semibold capitalize text-foreground">
-                  {formatGoalLabel(diet.goal)}
-                </span>{' '}
-                with balanced macros across your week.
+                {statusMessage || (
+                  <>
+                    Optimized for{' '}
+                    <span className="font-semibold capitalize text-foreground">
+                      {formatGoalLabel(diet.goal)}
+                    </span>{' '}
+                    with balanced macros across your week.
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -90,7 +111,7 @@ export default function DietHero({
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
           <StatCard label="Goal" value={formatGoalLabel(diet.goal)} />
           <StatCard
             label="Daily Calories"
@@ -102,6 +123,10 @@ export default function DietHero({
           />
           <StatCard label="Frequency" value={`${diet.mealsPerDay} Meals`} />
           <StatCard label="Duration" value={`${diet.durationWeeks} Weeks`} />
+          <StatCard
+            label="Compliance"
+            value={`${Math.round(compliance ?? 0)}%`}
+          />
         </div>
       </div>
     </section>
