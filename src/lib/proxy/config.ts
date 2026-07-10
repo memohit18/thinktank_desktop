@@ -63,6 +63,16 @@ export const proxyRoutes: ProxyRoute[] = [
     targetBaseUrl: SERVICE_API_URL,
     stripPrefix: '/api',
   },
+  {
+    prefix: '/api/diet',
+    targetBaseUrl: SERVICE_API_URL,
+    stripPrefix: '/api',
+  },
+  {
+    prefix: '/api/meal-plans',
+    targetBaseUrl: SERVICE_API_URL,
+    stripPrefix: '/api',
+  },
 ];
 
 export function resolveProxyTarget(pathname: string, search: string) {

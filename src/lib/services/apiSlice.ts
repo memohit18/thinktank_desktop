@@ -79,6 +79,6 @@ export const apiSlice = createApi({
   baseQuery,
   ...RTK_QUERY_DEFAULTS,
   keepUnusedDataFor: 300,
-  tagTypes: ['Auth', 'CodeSession', 'QuestionFilters', 'Problems', 'Profile', 'Submissions', 'UserProgress', 'Roadmaps', 'FitnessProfile', 'FitnessGoals', 'Transformation', 'Foods', 'FoodCategories', 'FoodPreferences', 'NutritionPreferences'],
+  tagTypes: ['Auth', 'CodeSession', 'QuestionFilters', 'Problems', 'Profile', 'Submissions', 'UserProgress', 'Roadmaps', 'FitnessProfile', 'FitnessGoals', 'Transformation', 'Foods', 'FoodCategories', 'FoodPreferences', 'NutritionPreferences', 'Diet'],
   endpoints: () => ({}),
 });

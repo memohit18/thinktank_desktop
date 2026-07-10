@@ -2,6 +2,7 @@ import {
   Dumbbell,
   LayoutDashboard,
   LineChart,
+  Salad,
   Sparkles,
   UtensilsCrossed,
 } from 'lucide-react';
@@ -10,6 +11,7 @@ export type FitnessModuleNavId =
   | 'transformation'
   | 'setup'
   | 'nutrition'
+  | 'diet'
   | 'analytics';
 
 export const FITNESS_MODULE_NAV_ITEMS = [
@@ -32,6 +34,13 @@ export const FITNESS_MODULE_NAV_ITEMS = [
     label: 'Nutrition',
     icon: UtensilsCrossed,
     href: '/fitness/food-preferences',
+    disabled: false,
+  },
+  {
+    id: 'diet' as const,
+    label: 'Diet',
+    icon: Salad,
+    href: '/fitness/diet',
     disabled: false,
   },
   {
@@ -63,6 +72,13 @@ export const FITNESS_SETUP_NAV_ITEMS = [
     label: 'Nutrition',
     icon: UtensilsCrossed,
     href: '/fitness/food-preferences',
+    disabled: false,
+  },
+  {
+    id: 'diet' as const,
+    label: 'Diet',
+    icon: Salad,
+    href: '/fitness/diet',
     disabled: false,
   },
   {

@@ -80,6 +80,10 @@ export const config = {
     '/api/food-preferences/:path*',
     '/api/nutrition-preferences',
     '/api/nutrition-preferences/:path*',
+    '/api/diet',
+    '/api/diet/:path*',
+    '/api/meal-plans',
+    '/api/meal-plans/:path*',
     '/api/code/:path*',
   ],
 };

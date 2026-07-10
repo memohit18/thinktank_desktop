@@ -11,6 +11,7 @@ import './services/fitnessApi';
 import './services/transformationApi';
 import './services/foodApi';
 import './services/nutritionPreferencesApi';
+import './services/dietApi';
 
 export function makeStore() {
   const store = configureStore({
