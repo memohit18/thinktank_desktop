@@ -14,6 +14,7 @@ export type FitnessModuleNavId =
   | 'nutrition'
   | 'diet'
   | 'meals'
+  | 'progress'
   | 'analytics';
 
 export const FITNESS_MODULE_NAV_ITEMS = [
@@ -53,11 +54,11 @@ export const FITNESS_MODULE_NAV_ITEMS = [
     disabled: false,
   },
   {
-    id: 'analytics' as const,
-    label: 'Analytics',
+    id: 'progress' as const,
+    label: 'Progress',
     icon: LineChart,
-    href: '#',
-    disabled: true,
+    href: '/fitness/progress',
+    disabled: false,
   },
 ] as const;
 
@@ -98,10 +99,10 @@ export const FITNESS_SETUP_NAV_ITEMS = [
     disabled: false,
   },
   {
-    id: 'analytics' as const,
-    label: 'Analytics',
+    id: 'progress' as const,
+    label: 'Progress',
     icon: LineChart,
-    href: '#',
-    disabled: true,
+    href: '/fitness/progress',
+    disabled: false,
   },
 ] as const;

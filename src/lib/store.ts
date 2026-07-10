@@ -13,6 +13,7 @@ import './services/foodApi';
 import './services/nutritionPreferencesApi';
 import './services/dietApi';
 import './services/mealApi';
+import './services/progressApi';
 
 export function makeStore() {
   const store = configureStore({
