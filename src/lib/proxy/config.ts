@@ -84,6 +84,26 @@ export const proxyRoutes: ProxyRoute[] = [
     stripPrefix: '/api',
   },
   {
+    prefix: '/api/meals',
+    targetBaseUrl: SERVICE_API_URL,
+    stripPrefix: '/api',
+  },
+  {
+    prefix: '/api/workouts',
+    targetBaseUrl: SERVICE_API_URL,
+    stripPrefix: '/api',
+  },
+  {
+    prefix: '/api/hydration',
+    targetBaseUrl: SERVICE_API_URL,
+    stripPrefix: '/api',
+  },
+  {
+    prefix: '/api/ai',
+    targetBaseUrl: SERVICE_API_URL,
+    stripPrefix: '/api',
+  },
+  {
     prefix: '/api/uploads',
     targetBaseUrl: SERVICE_API_URL,
     stripPrefix: '/api',

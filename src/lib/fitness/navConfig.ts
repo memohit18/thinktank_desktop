@@ -1,4 +1,5 @@
 import {
+  Activity,
   CalendarDays,
   Dumbbell,
   LayoutDashboard,
@@ -14,6 +15,7 @@ export type FitnessModuleNavId =
   | 'nutrition'
   | 'diet'
   | 'meals'
+  | 'workout'
   | 'progress'
   | 'analytics';
 
@@ -51,6 +53,13 @@ export const FITNESS_MODULE_NAV_ITEMS = [
     label: 'Meals',
     icon: CalendarDays,
     href: '/fitness/meals',
+    disabled: false,
+  },
+  {
+    id: 'workout' as const,
+    label: 'Workout',
+    icon: Activity,
+    href: '/fitness/workout',
     disabled: false,
   },
   {

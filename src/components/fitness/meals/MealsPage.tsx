@@ -3,18 +3,45 @@
 import { useMemo, useRef, useState, type TouchEvent } from 'react';
 import FitnessApiErrorState from '@/components/fitness/FitnessApiErrorState';
 import FitnessModuleShell from '@/components/fitness/FitnessModuleShell';
+import DailyScore from '@/components/fitness/execution/DailyScore';
+import FloatingCoach from '@/components/fitness/execution/FloatingCoach';
+import HydrationWidget from '@/components/fitness/execution/HydrationWidget';
+import MealExecutionCard from '@/components/fitness/execution/MealExecutionCard';
 import HistoryDrawer from '@/components/fitness/meals/HistoryDrawer';
 import LoadingSkeleton from '@/components/fitness/meals/LoadingSkeleton';
-import MealCard from '@/components/fitness/meals/MealCard';
 import MealHero from '@/components/fitness/meals/MealHero';
 import MealTabs from '@/components/fitness/meals/MealTabs';
 import NutritionSummary from '@/components/fitness/meals/NutritionSummary';
 import ReplaceMealDialog from '@/components/fitness/meals/ReplaceMealDialog';
 import WeeklyCalendar from '@/components/fitness/meals/WeeklyCalendar';
+import { useDailyCheckin } from '@/hooks/useDailyCheckin';
+import { useHydration } from '@/hooks/useHydration';
+import { useMealExecution } from '@/hooks/useMealExecution';
 import { useMeals } from '@/hooks/useMeals';
 import { MEAL_TYPE_ORDER } from '@/lib/fitness/meals/constants';
 import { filterMealsByType } from '@/lib/fitness/meals/mealResponse';
 import type { MealDayKey, MealType } from '@/lib/fitness/meals/types';
+
+/** Prefer check-in macros only when that source has a real goal; else use meal summary. */
+function pickGoal(
+  checkinGoal?: number | null,
+  summaryGoal?: number | null,
+) {
+  if (checkinGoal != null && checkinGoal > 0) return checkinGoal;
+  return summaryGoal ?? 0;
+}
+
+function pickMacro(
+  checkinCurrent?: number | null,
+  summaryCurrent?: number | null,
+  checkinGoal?: number | null,
+  summaryGoal?: number | null,
+) {
+  if (checkinGoal != null && checkinGoal > 0) {
+    return checkinCurrent ?? 0;
+  }
+  return summaryCurrent ?? checkinCurrent ?? 0;
+}
 
 export default function MealsPage() {
   const {
@@ -34,18 +61,15 @@ export default function MealsPage() {
     setIsHistoryOpen,
     replaceMealId,
     setReplaceMealId,
-    complete,
-    skip,
-    replace,
     generate,
     activate,
     isGenerating,
     isActivating,
-    isCompleting,
-    isSkipping,
-    isReplacing,
-    pendingMealId,
   } = useMeals();
+
+  const execution = useMealExecution();
+  const checkin = useDailyCheckin();
+  const hydration = useHydration();
 
   const [mealType, setMealType] = useState<MealType | 'all'>('all');
   const [selectedDay, setSelectedDay] = useState<MealDayKey | undefined>();
@@ -69,6 +93,15 @@ export default function MealsPage() {
 
   const replaceTarget = meals.find((meal) => meal.id === replaceMealId) ?? null;
 
+  const refreshAll = async () => {
+    await Promise.all([
+      refetch(),
+      checkin.refetch(),
+      hydration.refetch(),
+      checkin.refresh(),
+    ]);
+  };
+
   const handleTouchStart = (event: TouchEvent) => {
     if (typeof window === 'undefined') return;
     if (window.scrollY > 0) return;
@@ -84,7 +117,7 @@ export default function MealsPage() {
 
   const handleTouchEnd = () => {
     if (pullDistance > 56) {
-      void refetch();
+      void refreshAll();
     }
     pullStartY.current = null;
     setPullDistance(0);
@@ -104,7 +137,7 @@ export default function MealsPage() {
         <FitnessApiErrorState
           title="Could not load meal plan"
           message="Meal planner data could not be loaded from the server. Retry when your connection is available."
-          onRetry={() => void refetch()}
+          onRetry={() => void refreshAll()}
         />
       </FitnessModuleShell>
     );
@@ -127,23 +160,43 @@ export default function MealsPage() {
           </div>
         ) : null}
 
+        <DailyScore checkin={checkin.checkin} isLoading={checkin.isLoading} />
+
         <MealHero
           today={today}
           active={active}
-          calories={summary?.calories.current ?? 0}
-          protein={summary?.protein.current ?? 0}
-          calorieGoal={summary?.calories.goal ?? 0}
-          proteinGoal={summary?.protein.goal ?? 0}
+          calories={pickMacro(
+            checkin.checkin?.calories.current,
+            summary?.calories.current,
+            checkin.checkin?.calories.goal,
+            summary?.calories.goal,
+          )}
+          protein={pickMacro(
+            checkin.checkin?.protein.current,
+            summary?.protein.current,
+            checkin.checkin?.protein.goal,
+            summary?.protein.goal,
+          )}
+          calorieGoal={pickGoal(
+            checkin.checkin?.calories.goal,
+            summary?.calories.goal,
+          )}
+          proteinGoal={pickGoal(
+            checkin.checkin?.protein.goal,
+            summary?.protein.goal,
+          )}
           mealsRemaining={
             today?.mealsRemaining ??
             summary?.mealsRemaining ??
             meals.filter(
               (meal) =>
-                meal.status !== 'completed' && meal.status !== 'skipped',
+                meal.status !== 'completed' &&
+                meal.status !== 'skipped' &&
+                meal.status !== 'partial',
             ).length
           }
-          isRefreshing={isFetching}
-          onRefresh={() => void refetch()}
+          isRefreshing={isFetching || checkin.isFetching}
+          onRefresh={() => void refreshAll()}
           onOpenHistory={() => setIsHistoryOpen(true)}
           onGenerate={!hasMealPlan ? () => void generate() : undefined}
           isGenerating={isGenerating}
@@ -176,7 +229,7 @@ export default function MealsPage() {
                     Today&apos;s Meals
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Mark meals complete, skip, or replace as needed.
+                    Log ate, half portion, skip, replace, or add a note.
                   </p>
                 </div>
                 <MealTabs
@@ -193,16 +246,33 @@ export default function MealsPage() {
               ) : (
                 <div className="space-y-4">
                   {filteredMeals.map((meal) => (
-                    <MealCard
+                    <MealExecutionCard
                       key={meal.id}
                       meal={meal}
                       isActing={
-                        (isCompleting || isSkipping) &&
-                        pendingMealId === meal.id
+                        execution.isActing &&
+                        execution.pendingMealId === meal.id
                       }
-                      onComplete={(id) => void complete(id)}
-                      onSkip={(id) => void skip(id)}
+                      onLogPortion={(id, quantity, notes) =>
+                        execution.logPortion(id, quantity, notes).then((ok) => {
+                          if (ok) void checkin.refresh();
+                          return ok;
+                        })
+                      }
+                      onHalf={(id) =>
+                        execution.halfPortion(id).then((ok) => {
+                          if (ok) void checkin.refresh();
+                          return ok;
+                        })
+                      }
+                      onSkip={(id) =>
+                        execution.skip(id).then((ok) => {
+                          if (ok) void checkin.refresh();
+                          return ok;
+                        })
+                      }
                       onReplace={(id) => setReplaceMealId(id)}
+                      onCustomFood={(id) => setReplaceMealId(id)}
                     />
                   ))}
                 </div>
@@ -210,6 +280,20 @@ export default function MealsPage() {
             </section>
 
             <aside className="space-y-4">
+              <HydrationWidget
+                amountMl={
+                  hydration.amountMl || checkin.checkin?.water.currentMl || 0
+                }
+                goalMl={
+                  hydration.goalMl || checkin.checkin?.water.goalMl || 3500
+                }
+                isLogging={hydration.isLogging}
+                onAdd={async (amount) => {
+                  const ok = await hydration.add(amount);
+                  if (ok) void checkin.refresh();
+                  return ok;
+                }}
+              />
               <NutritionSummary summary={summary} />
               <WeeklyCalendar
                 schedule={schedule}
@@ -234,18 +318,32 @@ export default function MealsPage() {
         <ReplaceMealDialog
           open={Boolean(replaceMealId)}
           mealName={replaceTarget?.name}
-          isSubmitting={isReplacing}
+          isSubmitting={execution.isReplacing}
           onClose={() => setReplaceMealId(null)}
-          onConfirm={(foodId, quantity) => {
+          onConfirm={(foodId) => {
             if (!replaceMealId) return;
-            void replace({ mealItemId: replaceMealId, foodId, quantity }).then(
-              (ok) => {
-                if (ok) setReplaceMealId(null);
-              },
-            );
+            void execution.replace(replaceMealId, foodId).then((ok) => {
+              if (ok) {
+                setReplaceMealId(null);
+                void checkin.refresh();
+              }
+            });
           }}
         />
       </div>
+
+      <HydrationWidget
+        compact
+        amountMl={hydration.amountMl || checkin.checkin?.water.currentMl || 0}
+        goalMl={hydration.goalMl || checkin.checkin?.water.goalMl || 3500}
+        isLogging={hydration.isLogging}
+        onAdd={async (amount) => {
+          const ok = await hydration.add(amount);
+          if (ok) void checkin.refresh();
+          return ok;
+        }}
+      />
+      <FloatingCoach />
     </FitnessModuleShell>
   );
 }
