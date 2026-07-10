@@ -62,6 +62,11 @@ export default function TransformationGenerateView({
     : [];
   const basicInfo = reviewSections.find((section) => section.id === 'basic-info');
   const goalInfo = reviewSections.find((section) => section.id === 'goal');
+  const hasProfileSummary =
+    Boolean(profile) &&
+    ((basicInfo?.items.length ?? 0) > 0 ||
+      Boolean(profile?.physiqueGoal?.title) ||
+      Boolean(profile?.fitnessGoal));
 
   return (
     <div className="space-y-8">
@@ -82,7 +87,7 @@ export default function TransformationGenerateView({
         </div>
       </section>
 
-      {profile ? (
+      {hasProfileSummary ? (
         <section className="rounded-2xl border border-border bg-card p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -113,26 +118,26 @@ export default function TransformationGenerateView({
             <ProfileChip
               label="Physique goal"
               value={
-                profile.physiqueGoal?.title ??
+                profile?.physiqueGoal?.title ??
                 goalInfo?.items[0]?.value ??
                 '—'
               }
             />
             <ProfileChip
               label="Training focus"
-              value={formatGoal(profile.fitnessGoal)}
+              value={formatGoal(profile?.fitnessGoal)}
             />
             <ProfileChip
               label="Activity"
-              value={formatGoal(profile.activityLevel)}
+              value={formatGoal(profile?.activityLevel)}
             />
-            {profile.targetWeightKg ? (
+            {profile?.targetWeightKg ? (
               <ProfileChip
                 label="Target weight"
                 value={`${profile.targetWeightKg} kg`}
               />
             ) : null}
-            {profile.targetBodyFatPercent ? (
+            {profile?.targetBodyFatPercent ? (
               <ProfileChip
                 label="Target body fat"
                 value={`${profile.targetBodyFatPercent}%`}
@@ -141,13 +146,12 @@ export default function TransformationGenerateView({
           </div>
         </section>
       ) : (
-        <section className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6">
+        <section className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center">
           <p className="text-sm font-medium text-foreground">
-            Complete your fitness profile before generating a plan.
+            No fitness profile data available.
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            We need age, weight, goals, and training preferences to calculate
-            your transformation.
+            Complete onboarding or retry loading your profile before generating a plan.
           </p>
           <Link
             href="/fitness/setup"

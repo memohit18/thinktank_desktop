@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { mapFoodPreferencesToFormValues } from '@/lib/fitness/food/schemas/foodPreferences.schema';
 import {
   clearFoodPreferencesDraft,
-  readFoodPreferencesDraft,
   writeFoodPreferencesDraft,
 } from '@/lib/fitness/food/foodPreferencesStorage';
 import type { FoodPreferencesFormValues } from '@/lib/fitness/food/types';
@@ -39,18 +38,24 @@ export function useFoodPreferences() {
   useEffect(() => {
     if (isLoading || hasHydrated) return;
 
-    const draft = readFoodPreferencesDraft();
+    if (isError) {
+      setInitialValues(mapFoodPreferencesToFormValues(null));
+      setHasHydrated(true);
+      return;
+    }
 
     if (preferences) {
       setInitialValues(mapFoodPreferencesToFormValues(preferences));
-    } else if (draft) {
-      setInitialValues(draft.values);
+    } else {
+      setInitialValues(mapFoodPreferencesToFormValues(null));
     }
 
     setHasHydrated(true);
-  }, [hasHydrated, isLoading, preferences]);
+  }, [hasHydrated, isError, isLoading, preferences]);
 
   function persistDraft(values: FoodPreferencesFormValues) {
+    if (isError) return;
+
     writeFoodPreferencesDraft({
       values,
       updatedAt: new Date().toISOString(),
@@ -62,10 +67,10 @@ export function useFoodPreferences() {
   }
 
   return {
-    preferences,
+    preferences: isError ? undefined : preferences,
     initialValues,
     hasHydrated,
-    hasExistingPreferences: hasSavedPreferences(preferences),
+    hasExistingPreferences: hasSavedPreferences(preferences) && !isError,
     isLoading: !hasHydrated && isLoading,
     isFetching,
     isError,

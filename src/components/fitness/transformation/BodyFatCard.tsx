@@ -14,41 +14,23 @@ export default function BodyFatCard({
     return (
       <section className="rounded-2xl border border-border bg-card p-6">
         <h2 className="text-lg font-semibold text-foreground">Body Fat Analysis</h2>
-        <div className="mt-6 grid gap-6 md:grid-cols-[160px_1fr] md:items-center">
-          <div className="relative mx-auto flex size-36 items-center justify-center">
-            <div className="relative flex size-28 flex-col items-center justify-center rounded-full border border-border bg-muted/20">
-              <p className="text-2xl font-bold text-foreground">0%</p>
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Current</p>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Fat mass reduction</span>
-                <span className="font-semibold text-foreground">0%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted" />
-            </div>
-            <div>
-              <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Lean mass retention</span>
-                <span className="font-semibold text-foreground">0%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-muted" />
-            </div>
-          </div>
+        <div className="mt-6 flex min-h-32 items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-8 text-center text-sm text-muted-foreground">
+          No body fat data available for this plan.
         </div>
       </section>
     );
   }
 
-  const current = hasCurrent ? currentBodyFat : 0;
-  const target = hasTarget ? targetBodyFat : 0;
-  const reduction = current - target;
+  const current = hasCurrent ? currentBodyFat : null;
+  const target = hasTarget ? targetBodyFat : null;
+  const reduction =
+    current !== null && target !== null ? current - target : null;
   const progress =
-    reduction <= 0 || current <= 0
-      ? 100
-      : Math.min(100, Math.max(0, (target / current) * 100));
+    reduction === null || current === null || current <= 0
+      ? 0
+      : reduction <= 0
+        ? 100
+        : Math.min(100, Math.max(0, (target! / current) * 100));
 
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
@@ -68,16 +50,29 @@ export default function BodyFatCard({
 
       <div className="grid gap-6 md:grid-cols-[160px_1fr] md:items-center">
         <div className="relative mx-auto flex size-36 items-center justify-center">
-          <div
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: `conic-gradient(var(--accent) ${progress}%, var(--muted) ${progress}% 100%)`,
-            }}
-          />
-          <div className="relative flex size-28 flex-col items-center justify-center rounded-full bg-card">
-            <p className="text-2xl font-bold text-foreground">{current}%</p>
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Current</p>
-          </div>
+          {hasCurrent ? (
+            <>
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: `conic-gradient(var(--accent) ${progress}%, var(--muted) ${progress}% 100%)`,
+                }}
+              />
+              <div className="relative flex size-28 flex-col items-center justify-center rounded-full bg-card">
+                <p className="text-2xl font-bold text-foreground">{current}%</p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Current
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="flex size-28 flex-col items-center justify-center rounded-full border border-dashed border-border bg-muted/20">
+              <p className="text-sm font-semibold text-muted-foreground">—</p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Current
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -85,25 +80,27 @@ export default function BodyFatCard({
             <div className="mb-2 flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Fat mass reduction</span>
               <span className="font-semibold text-foreground">
-                {hasCurrent && hasTarget ? `${reduction.toFixed(1)}%` : 'Tracking via weight'}
+                {reduction !== null ? `${reduction.toFixed(1)}%` : '—'}
               </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-accent"
-                style={{ width: `${Math.min(100, Math.max(8, Math.abs(reduction) * 4))}%` }}
-              />
+              {reduction !== null ? (
+                <div
+                  className="h-full rounded-full bg-accent"
+                  style={{
+                    width: `${Math.min(100, Math.max(8, Math.abs(reduction) * 4))}%`,
+                  }}
+                />
+              ) : null}
             </div>
           </div>
 
           <div>
             <div className="mb-2 flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Lean mass retention</span>
-              <span className="font-semibold text-foreground">98% preserved</span>
+              <span className="font-semibold text-foreground">—</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <div className="h-full w-[98%] rounded-full bg-accent/70" />
-            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted" />
           </div>
         </div>
       </div>

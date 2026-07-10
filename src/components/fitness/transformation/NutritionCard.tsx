@@ -49,7 +49,9 @@ export default function NutritionCard({
             <span className="text-sm font-medium text-foreground">Workout Days</span>
           </div>
           <span className="text-sm font-semibold text-accent">
-            {workoutDaysPerWeek ?? 0} / week
+            {workoutDaysPerWeek && workoutDaysPerWeek > 0
+              ? `${workoutDaysPerWeek} / week`
+              : '—'}
           </span>
         </div>
       </div>

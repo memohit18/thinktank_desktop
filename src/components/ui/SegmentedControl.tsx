@@ -7,7 +7,7 @@ type SegmentedOption<T extends string> = {
 };
 
 type SegmentedControlProps<T extends string> = {
-  value: T;
+  value?: T;
   options: SegmentedOption<T>[];
   disabled?: boolean;
   onChange: (value: T) => void;
@@ -25,7 +25,7 @@ export default function SegmentedControl<T extends string>({
     return (
       <div className="grid gap-2 sm:grid-cols-2">
         {options.map((option) => {
-          const isActive = value === option.value;
+          const isActive = value !== undefined && value === option.value;
 
           return (
             <button
@@ -64,7 +64,7 @@ export default function SegmentedControl<T extends string>({
       className="inline-flex w-full gap-1 rounded-xl border border-border bg-muted/40 p-1"
     >
       {options.map((option) => {
-        const isActive = value === option.value;
+        const isActive = value !== undefined && value === option.value;
 
         return (
           <button

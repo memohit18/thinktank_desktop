@@ -64,11 +64,11 @@ export default function Timeline({ estimatedWeeks, milestones = [] }: TimelinePr
             </p>
           </div>
           <span className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-            Week 0 active
+            No timeline data
           </span>
         </div>
         <div className="flex min-h-24 items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-sm text-muted-foreground">
-          0 milestones
+          Milestones will appear once your transformation plan includes a timeline.
         </div>
       </section>
     );

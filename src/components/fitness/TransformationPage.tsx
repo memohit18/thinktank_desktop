@@ -24,7 +24,7 @@ export default function TransformationPage() {
     refetch,
   } = useTransformation();
 
-  const { data: profile } = useGetFitnessProfileQuery();
+  const { data: profile, isError: isProfileError } = useGetFitnessProfileQuery();
 
   if (isLoading) {
     return (
@@ -49,7 +49,7 @@ export default function TransformationPage() {
     return (
       <FitnessModuleShell activeNav="transformation">
         <TransformationGenerateView
-          profile={profile}
+          profile={isProfileError ? null : profile}
           isGenerating={isGenerating}
           onGenerate={() => void generate()}
         />
@@ -64,7 +64,11 @@ export default function TransformationPage() {
         history={history}
         historyMeta={historyMeta}
         isHistoryLoading={isHistoryLoading}
-        workoutDaysPerWeek={profile?.workoutDaysPerWeek ?? 0}
+        workoutDaysPerWeek={
+          profile?.workoutDaysPerWeek && profile.workoutDaysPerWeek > 0
+            ? profile.workoutDaysPerWeek
+            : undefined
+        }
         isRegenerating={isGenerating}
         onRegenerate={() => void regenerate()}
       />

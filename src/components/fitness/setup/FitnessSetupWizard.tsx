@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import FitnessApiErrorState from '@/components/fitness/FitnessApiErrorState';
 import FitnessSetupShell, {
   SetupMobileHeader,
 } from '@/components/fitness/setup/FitnessSetupShell';
@@ -93,6 +94,11 @@ export default function FitnessSetupWizard() {
   useEffect(() => {
     if (isProfileLoading || isProfileFetching || hasHydratedProfile) return;
 
+    if (isProfileError) {
+      setHasHydratedProfile(true);
+      return;
+    }
+
     if (profileIsComplete && !isEditMode) {
       setIsRedirecting(true);
       router.replace('/fitness/transformation');
@@ -126,21 +132,7 @@ export default function FitnessSetupWizard() {
     profile,
     profileIsComplete,
     router,
-  ]);
-
-  useEffect(() => {
-    if ((!isProfileError && !isProfileLoading && !isProfileFetching) || hasHydratedProfile) {
-      return;
-    }
-
-    if (isProfileError && !isProfileLoading && !isProfileFetching) {
-      setHasHydratedProfile(true);
-    }
-  }, [
-    hasHydratedProfile,
     isProfileError,
-    isProfileFetching,
-    isProfileLoading,
   ]);
 
   async function handleSubmit() {
@@ -231,6 +223,22 @@ export default function FitnessSetupWizard() {
     );
   }
 
+  if (isProfileError) {
+    return (
+      <FitnessSetupShell
+        currentStep={currentStep}
+        progressPercent={progressPercent}
+        footer={<div />}
+      >
+        <FitnessApiErrorState
+          title="Could not load fitness profile"
+          message="Your fitness profile could not be loaded. Retry when your connection is available."
+          onRetry={() => void refetchProfile()}
+        />
+      </FitnessSetupShell>
+    );
+  }
+
   if (profileIsComplete && isEditMode && !isEditingWizard && profile) {
     return (
       <FitnessModuleShell activeNav="setup">
@@ -299,19 +307,7 @@ export default function FitnessSetupWizard() {
       <SetupMobileHeader />
       <ProgressHeader currentStep={currentStep} />
 
-      {isProfileError ? (
-        <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-foreground">
-          Could not reach your fitness profile API (`GET /api/fitness/profile`).
-          You can still complete onboarding.
-          <button
-            type="button"
-            onClick={() => void refetchProfile()}
-            className="ml-2 font-semibold text-accent underline-offset-2 hover:underline"
-          >
-            Retry
-          </button>
-        </div>
-      ) : isEditingWizard && profile ? (
+      {isEditingWizard && profile ? (
         <div className="mb-4 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
           Editing your saved fitness profile.
         </div>

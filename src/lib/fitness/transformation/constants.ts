@@ -1,3 +1,4 @@
+import { formatMetricValue } from '@/lib/fitness/formatMetric';
 import type { LucideIcon } from 'lucide-react';
 import {
   Activity,
@@ -72,7 +73,7 @@ export const BODY_METRICS: MetricDefinition[] = [
     label: 'BMI',
     description: 'Body Mass Index based on current height & weight.',
     icon: Scale,
-    getValue: ({ bmi }) => bmi.toFixed(1),
+    getValue: ({ bmi }) => formatMetricValue(bmi, (value) => value.toFixed(1)),
     getBadge: ({ bmi }) => {
       if (bmi <= 0) return undefined;
       if (bmi < 18.5) return { label: 'Underweight', tone: 'warning' };
@@ -86,28 +87,30 @@ export const BODY_METRICS: MetricDefinition[] = [
     label: 'BMR',
     description: 'Calories burned at rest (Basal Metabolic Rate).',
     icon: Flame,
-    getValue: ({ bmr }) => String(Math.round(bmr)),
+    getValue: ({ bmr }) => formatMetricValue(bmr, (value) => String(Math.round(value))),
   },
   {
     id: 'tdee',
     label: 'TDEE',
     description: 'Total Daily Energy Expenditure with activity level.',
     icon: Zap,
-    getValue: ({ tdee }) => String(Math.round(tdee)),
+    getValue: ({ tdee }) => formatMetricValue(tdee, (value) => String(Math.round(value))),
   },
   {
     id: 'calories',
     label: 'Target',
     description: 'Daily intake calibrated for your transformation goal.',
     icon: Target,
-    getValue: ({ dailyCalories }) => String(Math.round(dailyCalories)),
+    getValue: ({ dailyCalories }) =>
+      formatMetricValue(dailyCalories, (value) => String(Math.round(value))),
   },
   {
     id: 'protein',
     label: 'Protein',
     description: 'Optimized to preserve muscle mass during your plan.',
     icon: Dumbbell,
-    getValue: ({ dailyProtein }) => `${Math.round(dailyProtein)}g`,
+    getValue: ({ dailyProtein }) =>
+      formatMetricValue(dailyProtein, (value) => `${Math.round(value)}g`),
   },
 ];
 
@@ -116,21 +119,31 @@ export const NUTRITION_SUMMARY_ITEMS = [
     id: 'calories',
     label: 'Daily Calories',
     icon: Calculator,
-    getValue: (t: { dailyCalories: number }) => `${Math.round(t.dailyCalories)} kcal`,
+    getValue: (t: { dailyCalories: number }) =>
+      formatMetricValue(t.dailyCalories, (value) => `${Math.round(value)} kcal`),
   },
   {
     id: 'protein',
     label: 'Daily Protein',
     icon: Dumbbell,
-    getValue: (t: { dailyProtein: number }) => `${Math.round(t.dailyProtein)}g`,
+    getValue: (t: { dailyProtein: number }) =>
+      formatMetricValue(t.dailyProtein, (value) => `${Math.round(value)}g`),
   },
   {
     id: 'loss',
     label: 'Expected Change',
     icon: TrendingDown,
     getValue: (t: { currentWeightKg: number; targetWeightKg: number; estimatedWeeks: number }) => {
+      if (
+        t.currentWeightKg <= 0 ||
+        t.targetWeightKg <= 0 ||
+        t.estimatedWeeks <= 0
+      ) {
+        return '—';
+      }
+
       const delta = t.targetWeightKg - t.currentWeightKg;
-      const weekly = t.estimatedWeeks > 0 ? delta / t.estimatedWeeks : 0;
+      const weekly = delta / t.estimatedWeeks;
       const sign = weekly > 0 ? '+' : '';
       return `${sign}${weekly.toFixed(1)} kg / wk`;
     },

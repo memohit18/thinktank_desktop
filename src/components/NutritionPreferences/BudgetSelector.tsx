@@ -26,7 +26,7 @@ const BUDGET_OPTIONS: {
 ];
 
 type BudgetSelectorProps = {
-  value: NutritionBudget;
+  value?: NutritionBudget;
   onChange: (value: NutritionBudget) => void;
   error?: string;
 };

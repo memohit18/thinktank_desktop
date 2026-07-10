@@ -26,7 +26,7 @@ const MEAL_TIMING_OPTIONS: {
 ];
 
 type MealTimingSelectorProps = {
-  value: MealTimingPreference;
+  value?: MealTimingPreference;
   onChange: (value: MealTimingPreference) => void;
   error?: string;
 };

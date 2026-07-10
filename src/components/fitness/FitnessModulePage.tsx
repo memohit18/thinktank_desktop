@@ -4,12 +4,18 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { ArrowRight, Dumbbell, Loader2 } from 'lucide-react';
+import FitnessApiErrorState from '@/components/fitness/FitnessApiErrorState';
 import { hasCompletedFitnessOnboarding } from '@/lib/fitness/profileMapper';
 import { useGetFitnessProfileQuery } from '@/lib/services/fitnessApi';
 
 export default function FitnessModulePage() {
   const router = useRouter();
-  const { data: profile, isLoading } = useGetFitnessProfileQuery();
+  const {
+    data: profile,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetFitnessProfileQuery();
 
   const profileIsComplete = hasCompletedFitnessOnboarding(profile);
 
@@ -25,6 +31,20 @@ export default function FitnessModulePage() {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
         <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
+        <div className="w-full max-w-xl">
+          <FitnessApiErrorState
+            title="Could not load fitness profile"
+            message="Your fitness profile could not be loaded from the server."
+            onRetry={() => void refetch()}
+          />
+        </div>
       </div>
     );
   }
@@ -56,17 +76,25 @@ export default function FitnessModulePage() {
         <HubCard
           title="Profile"
           description="Your baseline metrics and goals are saved."
-          value={`${profile.weightKg} kg · ${profile.fitnessGoal.replace(/_/g, ' ')}`}
+          value={
+            profile.weightKg > 0 && profile.fitnessGoal
+              ? `${profile.weightKg} kg · ${profile.fitnessGoal.replace(/_/g, ' ')}`
+              : '—'
+          }
         />
         <HubCard
           title="Training"
           description="Workout planning is coming soon."
-          value={`${profile.workoutDaysPerWeek} days / week`}
+          value={
+            profile.workoutDaysPerWeek > 0
+              ? `${profile.workoutDaysPerWeek} days / week`
+              : '—'
+          }
         />
         <HubCard
           title="Nutrition"
           description="Meal planning is coming soon."
-          value={profile.dietType.replace(/_/g, ' ')}
+          value={profile.dietType ? profile.dietType.replace(/_/g, ' ') : '—'}
         />
       </div>
 

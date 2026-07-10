@@ -23,13 +23,7 @@ export type NutritionPreferencesSchemaValues = z.infer<
 >;
 
 export const EMPTY_NUTRITION_PREFERENCES_VALUES: NutritionPreferencesFormValues =
-  {
-    budgetCategory: 'moderate',
-    preferredCuisine: 'indian',
-    mealsPerDay: 4,
-    cookingTimeMinutes: 30,
-    preferredMealTiming: 'flexible',
-  };
+  {};
 
 export function mapNutritionPreferencesToFormValues(
   preferences: NutritionPreferences | null | undefined,

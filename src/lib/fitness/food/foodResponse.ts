@@ -59,13 +59,15 @@ export function normalizeFood(raw: unknown): Food | null {
 
   const category = readString(
     record.categoryId ?? record.category_id ?? record.category,
-    'uncategorized',
   );
+
+  const name = readString(record.name ?? record.title);
+  if (!name) return null;
 
   return {
     id,
-    name: readString(record.name ?? record.title, 'Food item'),
-    categoryId: category,
+    name,
+    categoryId: category || 'uncategorized',
     categoryName: readString(record.categoryName ?? record.category_name ?? record.category) || undefined,
     dietType: readString(record.dietType ?? record.diet_type) || null,
     servingSize: readString(record.servingSize ?? record.serving_size) || null,
@@ -135,11 +137,7 @@ function extractFoodsFromPreferenceItems(items: FoodPreferenceItem[]) {
   for (const item of items) {
     if (item.food) {
       foods.push(item.food);
-      continue;
     }
-
-    const fallback = normalizeFood({ id: item.foodId, name: item.foodId });
-    if (fallback) foods.push(fallback);
   }
 
   return foods;

@@ -15,10 +15,13 @@ export function useNutritionPreferences() {
 
   const [hasHydrated, setHasHydrated] = useState(false);
 
-  const initialValues = useMemo(
-    () => mapNutritionPreferencesToFormValues(preferences),
-    [preferences],
-  );
+  const initialValues = useMemo(() => {
+    if (isError) {
+      return mapNutritionPreferencesToFormValues(null);
+    }
+
+    return mapNutritionPreferencesToFormValues(preferences);
+  }, [isError, preferences]);
 
   useEffect(() => {
     if (isLoading || hasHydrated) return;
@@ -26,10 +29,10 @@ export function useNutritionPreferences() {
   }, [hasHydrated, isLoading]);
 
   return {
-    preferences,
+    preferences: isError ? undefined : preferences,
     initialValues,
     hasHydrated,
-    hasExistingPreferences: Boolean(preferences),
+    hasExistingPreferences: Boolean(preferences) && !isError,
     isLoading: !hasHydrated && isLoading,
     isFetching,
     isError,

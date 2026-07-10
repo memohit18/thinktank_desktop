@@ -11,7 +11,7 @@ const MEAL_OPTIONS: { value: MealsPerDay; label: string }[] = [
 ];
 
 type MealsSelectorProps = {
-  value: MealsPerDay;
+  value?: MealsPerDay;
   onChange: (value: MealsPerDay) => void;
   error?: string;
 };
@@ -29,7 +29,7 @@ export default function MealsSelector({
       </p>
       <div className="mt-4">
         <SegmentedControl
-          value={String(value)}
+          value={value !== undefined ? String(value) : undefined}
           options={MEAL_OPTIONS.map((option) => ({
             value: String(option.value),
             label: option.label,

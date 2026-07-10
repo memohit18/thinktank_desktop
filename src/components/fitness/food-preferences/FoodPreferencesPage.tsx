@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, Loader2, Plus, RefreshCw, Save } from 'lucide-react';
+import { Loader2, Plus, Save } from 'lucide-react';
 import EditFoodModal from '@/components/fitness/food-preferences/EditFoodModal';
 import FoodFormModal from '@/components/fitness/food-preferences/FoodFormModal';
 import NutritionBudgetSelector from '@/components/NutritionPreferences/BudgetSelector';
@@ -13,6 +13,7 @@ import CuisineSelector from '@/components/NutritionPreferences/CuisineSelector';
 import MealTimingSelector from '@/components/NutritionPreferences/MealTimingSelector';
 import MealsSelector from '@/components/NutritionPreferences/MealsSelector';
 import FitnessModuleShell from '@/components/fitness/FitnessModuleShell';
+import FitnessApiErrorState from '@/components/fitness/FitnessApiErrorState';
 import CategoryTabs from '@/components/fitness/food-preferences/CategoryTabs';
 import type { FoodPreferenceAction } from '@/components/fitness/food-preferences/FoodCard';
 import FoodGrid from '@/components/fitness/food-preferences/FoodGrid';
@@ -39,7 +40,6 @@ import {
   type FoodPreferencesSchemaValues,
 } from '@/lib/fitness/food/schemas/foodPreferences.schema';
 import {
-  EMPTY_NUTRITION_PREFERENCES_VALUES,
   nutritionPreferencesSchema,
   type NutritionPreferencesSchemaValues,
 } from '@/schemas/nutrition-preferences.schema';
@@ -117,7 +117,7 @@ export default function FoodPreferencesPage() {
 
   const nutritionForm = useForm<NutritionPreferencesSchemaValues>({
     resolver: zodResolver(nutritionPreferencesSchema),
-    defaultValues: EMPTY_NUTRITION_PREFERENCES_VALUES,
+    defaultValues: {},
     mode: 'onChange',
   });
 
@@ -159,13 +159,7 @@ export default function FoodPreferencesPage() {
     control: nutritionForm.control,
   });
 
-  const nutritionValues = useMemo(
-    () => ({
-      ...EMPTY_NUTRITION_PREFERENCES_VALUES,
-      ...watchedNutritionValues,
-    }),
-    [watchedNutritionValues],
-  );
+  const nutritionValues = watchedNutritionValues ?? {};
 
   const draftTimeoutRef = useRef<number | null>(null);
 
@@ -317,6 +311,9 @@ export default function FoodPreferencesPage() {
     </div>
   );
 
+  const hasCriticalError =
+    isFoodsError || isPreferencesError || isNutritionError;
+
   if (
     isPreferencesLoading ||
     isNutritionLoading ||
@@ -327,6 +324,22 @@ export default function FoodPreferencesPage() {
     return (
       <FitnessModuleShell activeNav="nutrition">
         <LoadingSkeleton />
+      </FitnessModuleShell>
+    );
+  }
+
+  if (hasCriticalError) {
+    return (
+      <FitnessModuleShell activeNav="nutrition">
+        <FitnessApiErrorState
+          title="Could not load nutrition preferences"
+          message="Food and nutrition data could not be loaded from the server. Retry when your connection is available."
+          onRetry={() => {
+            void refetchFoods();
+            void refetchPreferences();
+            void refetchNutritionPreferences();
+          }}
+        />
       </FitnessModuleShell>
     );
   }
@@ -349,32 +362,6 @@ export default function FoodPreferencesPage() {
             be structured around your taste, schedule, and budget.
           </p>
         </header>
-
-        {(isFoodsError || isPreferencesError || isNutritionError) && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-foreground">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="mt-0.5 size-4 shrink-0 text-amber-600" />
-                <p>
-                  Some preference data could not be loaded. You can still edit
-                  locally and retry syncing.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  void refetchFoods();
-                  void refetchPreferences();
-                  void refetchNutritionPreferences();
-                }}
-                className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
-              >
-                <RefreshCw className="size-3.5" />
-                Retry
-              </button>
-            </div>
-          </div>
-        )}
 
         <section className="space-y-6 rounded-2xl border border-border bg-card p-5">
           <div>

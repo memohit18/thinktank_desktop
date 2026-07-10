@@ -1,7 +1,7 @@
 'use client';
 
 type CookingTimeSliderProps = {
-  value: number;
+  value?: number;
   onChange: (value: number) => void;
   error?: string;
 };
@@ -11,6 +11,8 @@ export default function CookingTimeSlider({
   onChange,
   error,
 }: CookingTimeSliderProps) {
+  const hasValue = typeof value === 'number';
+
   return (
     <div>
       <div className="flex items-start justify-between gap-3">
@@ -21,7 +23,7 @@ export default function CookingTimeSlider({
           </p>
         </div>
         <div className="rounded-lg border border-accent/20 bg-accent/10 px-3 py-2 text-sm font-semibold text-accent">
-          {value} min
+          {hasValue ? `${value} min` : 'Not set'}
         </div>
       </div>
 
@@ -32,7 +34,7 @@ export default function CookingTimeSlider({
           min={15}
           max={120}
           step={5}
-          value={value}
+          value={value ?? 15}
           onChange={(event) => onChange(Number(event.target.value))}
           className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-accent"
         />

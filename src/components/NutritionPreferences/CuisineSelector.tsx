@@ -12,7 +12,7 @@ const CUISINE_OPTIONS = [
 ] as const;
 
 type CuisineSelectorProps = {
-  value: PreferredCuisine;
+  value?: PreferredCuisine;
   onChange: (value: PreferredCuisine) => void;
   error?: string;
 };
@@ -35,12 +35,18 @@ export default function CuisineSelector({
       </p>
       <Select
         id="nutrition-preferred-cuisine"
-        value={value}
-        onChange={(nextValue) => onChange(nextValue as PreferredCuisine)}
-        options={CUISINE_OPTIONS.map((option) => ({
-          value: option.value,
-          label: option.label,
-        }))}
+        value={value ?? ''}
+        onChange={(nextValue) => {
+          if (!nextValue) return;
+          onChange(nextValue as PreferredCuisine);
+        }}
+        options={[
+          { value: '', label: 'Select cuisine' },
+          ...CUISINE_OPTIONS.map((option) => ({
+            value: option.value,
+            label: option.label,
+          })),
+        ]}
         className="mt-4 w-full"
       />
       {error ? <p className="mt-3 text-xs text-red-500">{error}</p> : null}

@@ -9,31 +9,27 @@ import type {
   PreferredCuisine,
 } from '@/types/nutrition-preferences';
 
-function readString(value: unknown, fallback = '') {
-  return typeof value === 'string' && value.trim() ? value.trim() : fallback;
+function readString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : '';
 }
 
-function readNumber(value: unknown, fallback: number) {
+function readNumber(value: unknown) {
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
-function normalizeBudget(value: unknown): NutritionBudget {
-  const budget = readString(value, 'moderate').toLowerCase();
-
+function parseBudget(value: unknown): NutritionBudget | null {
+  const budget = readString(value).toLowerCase();
   if (budget === 'budget' || budget === 'moderate' || budget === 'premium') {
     return budget;
   }
-
   if (budget === 'low') return 'budget';
   if (budget === 'high') return 'premium';
-
-  return 'moderate';
+  return null;
 }
 
-function normalizeCuisine(value: unknown): PreferredCuisine {
-  const cuisine = readString(value, 'indian').toLowerCase();
-
+function parseCuisine(value: unknown): PreferredCuisine | null {
+  const cuisine = readString(value).toLowerCase();
   if (
     cuisine === 'indian' ||
     cuisine === 'north_indian' ||
@@ -43,16 +39,13 @@ function normalizeCuisine(value: unknown): PreferredCuisine {
   ) {
     return cuisine;
   }
-
   if (cuisine === 'north indian') return 'north_indian';
   if (cuisine === 'south indian') return 'south_indian';
-
-  return 'indian';
+  return null;
 }
 
-function normalizeMealsPerDay(value: unknown): MealsPerDay {
-  const mealsPerDay = readNumber(value, 4);
-
+function parseMealsPerDay(value: unknown): MealsPerDay | null {
+  const mealsPerDay = readNumber(value);
   if (
     mealsPerDay === 3 ||
     mealsPerDay === 4 ||
@@ -61,18 +54,15 @@ function normalizeMealsPerDay(value: unknown): MealsPerDay {
   ) {
     return mealsPerDay;
   }
-
-  return 4;
+  return null;
 }
 
-function normalizeMealTiming(value: unknown): MealTimingPreference {
-  const mealTiming = readString(value, 'flexible').toLowerCase();
-
+function parseMealTiming(value: unknown): MealTimingPreference | null {
+  const mealTiming = readString(value).toLowerCase();
   if (mealTiming === 'early' || mealTiming === 'flexible' || mealTiming === 'late') {
     return mealTiming;
   }
-
-  return 'flexible';
+  return null;
 }
 
 export function unwrapNutritionPreferences(
@@ -94,40 +84,50 @@ export function unwrapNutritionPreferences(
   }
 
   const raw = record as Record<string, unknown>;
+  const budgetCategory = parseBudget(
+    raw.budgetCategory ?? raw.budget_category ?? raw.budget,
+  );
+  const preferredCuisine = parseCuisine(
+    raw.preferredCuisine ?? raw.preferred_cuisine ?? raw.cuisine,
+  );
+  const mealsPerDay = parseMealsPerDay(
+    raw.mealsPerDay ?? raw.meals_per_day ?? raw.mealCount ?? raw.meal_count,
+  );
+  const cookingTimeMinutes = readNumber(
+    raw.cookingTimeMinutes ??
+      raw.cooking_time_minutes ??
+      raw.cookingTimeInMinutes ??
+      raw.cooking_time_in_minutes ??
+      raw.cookingTime ??
+      raw.cooking_time,
+  );
+  const preferredMealTiming = parseMealTiming(
+    raw.preferredMealTiming ??
+      raw.preferred_meal_timing ??
+      raw.mealTiming ??
+      raw.meal_timing,
+  );
+
+  if (
+    !budgetCategory ||
+    !preferredCuisine ||
+    !mealsPerDay ||
+    cookingTimeMinutes === null ||
+    cookingTimeMinutes < 15 ||
+    cookingTimeMinutes > 120 ||
+    !preferredMealTiming
+  ) {
+    return null;
+  }
 
   return {
     id: readString(raw.id) || undefined,
     userId: readString(raw.userId ?? raw.user_id) || undefined,
-    budgetCategory: normalizeBudget(
-      raw.budgetCategory ?? raw.budget_category ?? raw.budget,
-    ),
-    preferredCuisine: normalizeCuisine(
-      raw.preferredCuisine ?? raw.preferred_cuisine ?? raw.cuisine,
-    ),
-    mealsPerDay: normalizeMealsPerDay(
-      raw.mealsPerDay ?? raw.meals_per_day ?? raw.mealCount ?? raw.meal_count,
-    ),
-    cookingTimeMinutes: Math.min(
-      120,
-      Math.max(
-        15,
-        readNumber(
-          raw.cookingTimeMinutes ??
-            raw.cooking_time_minutes ??
-            raw.cookingTimeInMinutes ??
-            raw.cooking_time_in_minutes ??
-            raw.cookingTime ??
-            raw.cooking_time,
-          30,
-        ),
-      ),
-    ),
-    preferredMealTiming: normalizeMealTiming(
-      raw.preferredMealTiming ??
-        raw.preferred_meal_timing ??
-        raw.mealTiming ??
-        raw.meal_timing,
-    ),
+    budgetCategory,
+    preferredCuisine,
+    mealsPerDay,
+    cookingTimeMinutes,
+    preferredMealTiming,
     createdAt: readString(raw.createdAt ?? raw.created_at) || undefined,
     updatedAt: readString(raw.updatedAt ?? raw.updated_at) || undefined,
   };

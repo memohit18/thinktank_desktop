@@ -32,9 +32,9 @@ export type NutritionPreferencesPayload = {
 };
 
 export type NutritionPreferencesFormValues = {
-  budgetCategory: NutritionBudget;
-  preferredCuisine: PreferredCuisine;
-  mealsPerDay: MealsPerDay;
-  cookingTimeMinutes: number;
-  preferredMealTiming: MealTimingPreference;
+  budgetCategory?: NutritionBudget;
+  preferredCuisine?: PreferredCuisine;
+  mealsPerDay?: MealsPerDay;
+  cookingTimeMinutes?: number;
+  preferredMealTiming?: MealTimingPreference;
 };

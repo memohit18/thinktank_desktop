@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { formatMetricValue } from '@/lib/fitness/formatMetric';
 import type { Transformation } from '@/lib/fitness/transformation/types';
 
 type TransformationHeroProps = {
@@ -19,11 +20,11 @@ function formatFocusLabel(transformation: Transformation) {
     return transformation.goal.replace(/_/g, ' ').toLowerCase();
   }
 
-  return 'your goal';
+  return '—';
 }
 
 function formatWeight(value: number) {
-  return Number.isFinite(value) ? value : 0;
+  return formatMetricValue(value, (metric) => `${metric} kg`);
 }
 
 export default function TransformationHero({
@@ -51,21 +52,29 @@ export default function TransformationHero({
 
           <div className="flex flex-wrap items-end gap-3">
             <p className="text-3xl font-bold text-foreground sm:text-4xl">
-              {formatWeight(transformation.currentWeightKg)} kg
+              {formatWeight(transformation.currentWeightKg)}
             </p>
             <span className="pb-1 text-2xl text-muted-foreground">→</span>
             <p className="text-3xl font-bold text-accent sm:text-4xl">
-              {formatWeight(transformation.targetWeightKg)} kg
+              {formatWeight(transformation.targetWeightKg)}
             </p>
           </div>
 
           <p className="text-sm text-muted-foreground">
             Estimated completion in{' '}
             <span className="font-semibold text-foreground">
-              {transformation.estimatedWeeks || 0} weeks
-            </span>{' '}
-            based on your metabolism and{' '}
-            <span className="capitalize">{formatFocusLabel(transformation)}</span> target.
+              {formatMetricValue(transformation.estimatedWeeks, String)}
+            </span>
+            {transformation.estimatedWeeks > 0 ? ' weeks' : ''}{' '}
+            {transformation.targetPhysique || transformation.goal ? (
+              <>
+                based on your metabolism and{' '}
+                <span className="capitalize">{formatFocusLabel(transformation)}</span>{' '}
+                target.
+              </>
+            ) : (
+              'based on your metabolism.'
+            )}
           </p>
         </div>
 

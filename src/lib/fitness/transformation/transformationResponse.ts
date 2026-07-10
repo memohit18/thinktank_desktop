@@ -61,6 +61,15 @@ function normalizeMilestones(raw: unknown) {
     .sort((a, b) => a.weekNumber - b.weekNumber);
 }
 
+function isValidTransformation(transformation: Transformation) {
+  return (
+    transformation.currentWeightKg > 0 &&
+    transformation.targetWeightKg > 0 &&
+    transformation.dailyCalories > 0 &&
+    transformation.estimatedWeeks > 0
+  );
+}
+
 export function normalizeTransformation(raw: unknown): Transformation | null {
   if (!raw || typeof raw !== 'object') {
     return null;
@@ -80,7 +89,7 @@ export function normalizeTransformation(raw: unknown): Transformation | null {
     record.dailyProtein ?? record.daily_protein ?? record.protein,
   );
 
-  return {
+  const result = {
     id,
     currentWeightKg: readNumber(record.currentWeightKg ?? record.current_weight_kg),
     targetWeightKg: readNumber(record.targetWeightKg ?? record.target_weight_kg),
@@ -100,6 +109,8 @@ export function normalizeTransformation(raw: unknown): Transformation | null {
     createdAt: readString(record.createdAt ?? record.created_at) || undefined,
     updatedAt: readString(record.updatedAt ?? record.updated_at) || undefined,
   };
+
+  return isValidTransformation(result) ? result : null;
 }
 
 export function unwrapTransformation(response: unknown): Transformation | null {
