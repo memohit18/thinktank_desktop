@@ -118,9 +118,11 @@ export type MealReplacePayload = {
 
 export type AiChatMessage = {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   createdAt: string;
+  pending?: boolean;
+  error?: boolean;
 };
 
 export type AiChatResponse = {

@@ -1,12 +1,4 @@
-export const aiCoachService = {
-  chat(body: { message: string; sessionId?: string }) {
-    return {
-      url: '/ai/chat',
-      method: 'POST' as const,
-      body: {
-        message: body.message,
-        ...(body.sessionId ? { sessionId: body.sessionId } : {}),
-      },
-    };
-  },
-};
+import { aiService } from '@/lib/services/ai.service';
+
+/** @deprecated Use `@/lib/services/ai.service` */
+export const aiCoachService = aiService;

@@ -4,7 +4,6 @@ import {
 } from '@/lib/fitness/fitnessResponse';
 import type {
   ActiveWorkoutPlan,
-  AiChatResponse,
   DailyCheckinScore,
   HydrationToday,
   WorkoutDay,
@@ -356,29 +355,4 @@ export function unwrapWorkoutSession(
   };
 }
 
-export function unwrapAiChat(response: unknown): AiChatResponse | null {
-  if (isFitnessErrorEnvelope(response)) return null;
-  const data = unwrapFitnessData(response);
-  if (!data || typeof data !== 'object') return null;
-  const record = data as Record<string, unknown>;
-  const reply =
-    readString(
-      record.reply ??
-        record.answer ??
-        record.message ??
-        record.response ??
-        record.content,
-    ) || '';
-  const sessionId = readString(
-    record.sessionId ?? record.conversationId ?? record.id,
-  );
-  if (!sessionId && !reply) return null;
-  return {
-    sessionId: sessionId || `session-${Date.now()}`,
-    reply,
-    message: readString(record.message) || null,
-    answer: readString(record.answer) || null,
-    contextVersion: (record.contextVersion as string | number | null) ?? null,
-    createdAt: readString(record.createdAt ?? record.timestamp) || null,
-  };
-}
+export { unwrapAiChat } from '@/lib/fitness/coach/aiResponse';

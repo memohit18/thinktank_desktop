@@ -2,6 +2,7 @@
 
 import FitnessApiErrorState from '@/components/fitness/FitnessApiErrorState';
 import FitnessModuleShell from '@/components/fitness/FitnessModuleShell';
+import FloatingCoach from '@/components/fitness/coach/FloatingCoach';
 import DietDashboard from '@/components/fitness/diet/DietDashboard';
 import DietGenerateView from '@/components/fitness/diet/DietGenerateView';
 import GenerationLoader from '@/components/fitness/diet/GenerationLoader';
@@ -104,6 +105,7 @@ export default function DietPage() {
         onSelectPlannerDate={selectPlannerDate}
         isPlannerFetching={isPlannerFetching}
       />
+      <FloatingCoach />
     </FitnessModuleShell>
   );
 }

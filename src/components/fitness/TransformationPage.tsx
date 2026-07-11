@@ -1,6 +1,7 @@
 'use client';
 
 import FitnessModuleShell from '@/components/fitness/FitnessModuleShell';
+import FloatingCoach from '@/components/fitness/coach/FloatingCoach';
 import LoadingSkeleton from '@/components/fitness/transformation/LoadingSkeleton';
 import TransformationDashboard from '@/components/fitness/transformation/TransformationDashboard';
 import TransformationErrorState from '@/components/fitness/transformation/TransformationErrorState';
@@ -72,6 +73,7 @@ export default function TransformationPage() {
         isRegenerating={isGenerating}
         onRegenerate={() => void regenerate()}
       />
+      <FloatingCoach />
     </FitnessModuleShell>
   );
 }
