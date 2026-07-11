@@ -55,6 +55,10 @@ export function unwrapDailyCheckin(response: unknown): DailyCheckinScore | null 
   const data = unwrapFitnessData(response);
   if (!data || typeof data !== 'object') return null;
   const record = data as Record<string, unknown>;
+  const nestedCheckin =
+    record.checkin && typeof record.checkin === 'object'
+      ? (record.checkin as Record<string, unknown>)
+      : null;
   const breakdown =
     record.breakdown && typeof record.breakdown === 'object'
       ? (record.breakdown as Record<string, unknown>)
@@ -74,15 +78,56 @@ export function unwrapDailyCheckin(response: unknown): DailyCheckinScore | null 
         ? (record.hydration as Record<string, unknown>)
         : {};
 
-  const calories = macroPair(
-    record.calories ?? record.calorie,
-    ['current', 'consumed', 'value', 'amount'],
-    ['goal', 'target', 'targetCalories'],
+  // API may return calories/protein as flat numbers OR { current, goal } objects.
+  const caloriesIsNumber = typeof record.calories === 'number';
+  const proteinIsNumber = typeof record.protein === 'number';
+  const calories = caloriesIsNumber
+    ? {
+        current: readNumber(record.calories),
+        goal: readNumber(
+          nestedCheckin?.calorieGoal ?? record.calorieGoal ?? record.caloriesGoal,
+        ),
+        percent: null as number | null,
+      }
+    : macroPair(
+        record.calories ?? record.calorie,
+        ['current', 'consumed', 'value', 'amount'],
+        ['goal', 'target', 'targetCalories'],
+      );
+  const protein = proteinIsNumber
+    ? {
+        current: readNumber(record.protein),
+        goal: readNumber(
+          nestedCheckin?.proteinGoal ?? record.proteinGoal ?? record.proteinTarget,
+        ),
+        percent: null as number | null,
+      }
+    : macroPair(
+        record.protein,
+        ['current', 'consumed', 'value', 'amount'],
+        ['goal', 'target', 'targetProtein'],
+      );
+
+  const mealsCompleted = readNumber(
+    mealsRaw.completed ??
+      mealsRaw.completedCount ??
+      record.mealsCompleted ??
+      nestedCheckin?.mealsCompleted,
   );
-  const protein = macroPair(
-    record.protein,
-    ['current', 'consumed', 'value', 'amount'],
-    ['goal', 'target', 'targetProtein'],
+  const mealsAssigned = readNumber(
+    mealsRaw.assigned ??
+      mealsRaw.total ??
+      record.mealsAssigned ??
+      (mealsCompleted +
+        readNumber(
+          mealsRaw.skipped ?? record.mealsSkipped ?? nestedCheckin?.mealsSkipped,
+        )),
+  );
+  const mealsSkipped = readNumber(
+    mealsRaw.skipped ??
+      mealsRaw.skippedCount ??
+      record.mealsSkipped ??
+      nestedCheckin?.mealsSkipped,
   );
 
   return {
@@ -90,32 +135,39 @@ export function unwrapDailyCheckin(response: unknown): DailyCheckinScore | null 
       record.todayScore ?? record.score ?? record.dailyScore,
     ),
     calories: {
-      current: calories.current || readNumber(record.caloriesConsumed),
+      current:
+        calories.current ||
+        readNumber(
+          record.caloriesConsumed ?? nestedCheckin?.caloriesConsumed,
+        ),
       goal: calories.goal || readNumber(record.calorieGoal),
       percent: calories.percent,
     },
     protein: {
-      current: protein.current || readNumber(record.proteinConsumed),
+      current:
+        protein.current ||
+        readNumber(
+          record.proteinConsumed ?? nestedCheckin?.proteinConsumed,
+        ),
       goal: protein.goal || readNumber(record.proteinGoal),
       percent: protein.percent,
     },
     meals: {
-      completed: readNumber(
-        mealsRaw.completed ?? mealsRaw.completedCount ?? record.mealsCompleted,
-      ),
-      assigned: readNumber(
-        mealsRaw.assigned ?? mealsRaw.total ?? record.mealsAssigned,
-      ),
-      skipped: readNumber(
-        mealsRaw.skipped ?? mealsRaw.skippedCount ?? record.mealsSkipped,
-      ),
-      score: readNullableNumber(mealsRaw.score ?? breakdown?.meals),
+      completed: mealsCompleted,
+      assigned: mealsAssigned,
+      skipped: mealsSkipped,
+      score:
+        readNullableNumber(mealsRaw.score ?? breakdown?.meals) ??
+        (mealsAssigned > 0
+          ? Math.round((mealsCompleted / mealsAssigned) * 100)
+          : null),
     },
     workout: {
       completed: Boolean(
         workoutRaw.completed ??
           workoutRaw.done ??
           record.workoutCompleted ??
+          nestedCheckin?.workoutCompleted ??
           false,
       ),
       score: readNullableNumber(workoutRaw.score ?? breakdown?.workout),
@@ -128,17 +180,23 @@ export function unwrapDailyCheckin(response: unknown): DailyCheckinScore | null 
         waterRaw.currentMl ??
           waterRaw.amountMl ??
           waterRaw.current ??
-          record.waterMl,
+          record.waterMl ??
+          nestedCheckin?.waterIntakeMl,
       ),
       goalMl: readNumber(
-        waterRaw.goalMl ?? waterRaw.goal ?? record.waterGoalMl,
+        waterRaw.targetMl ??
+          waterRaw.goalMl ??
+          waterRaw.goal ??
+          record.waterGoalMl,
         3500,
       ),
       percent: readNullableNumber(waterRaw.percent ?? breakdown?.water),
       score: readNullableNumber(waterRaw.score),
     },
     compliancePercent: readNullableNumber(
-      record.compliancePercent ?? record.compliance,
+      record.compliancePercent ??
+        record.compliance ??
+        nestedCheckin?.dietCompliance,
     ),
     breakdown: breakdown
       ? {
@@ -149,17 +207,16 @@ export function unwrapDailyCheckin(response: unknown): DailyCheckinScore | null 
           protein: readNullableNumber(breakdown.protein),
         }
       : {
-          meals: readNullableNumber(mealsRaw.score),
+          meals:
+            mealsAssigned > 0
+              ? Math.round((mealsCompleted / mealsAssigned) * 100)
+              : null,
           workout: readNullableNumber(workoutRaw.score),
-          water: readNullableNumber(waterRaw.score),
-          calories: readNullableNumber(
-            (record.calories as Record<string, unknown> | undefined)?.score,
-          ),
-          protein: readNullableNumber(
-            (record.protein as Record<string, unknown> | undefined)?.score,
-          ),
+          water: readNullableNumber(waterRaw.percent ?? waterRaw.score),
+          calories: null,
+          protein: null,
         },
-    date: readString(record.date) || null,
+    date: readString(record.date ?? nestedCheckin?.checkInDate) || null,
   };
 }
 

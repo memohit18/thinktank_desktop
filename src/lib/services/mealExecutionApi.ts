@@ -58,6 +58,7 @@ export const mealExecutionApi = apiSlice.injectEndpoints({
       invalidatesTags: invalidateTagsOnSuccess([
         'MealPlan',
         'Checkin',
+        'Dashboard',
         'Diet',
       ]),
     }),
@@ -98,6 +99,7 @@ export const mealExecutionApi = apiSlice.injectEndpoints({
       invalidatesTags: invalidateTagsOnSuccess([
         'MealPlan',
         'Checkin',
+        'Dashboard',
         'Diet',
       ]),
     }),
@@ -135,6 +137,7 @@ export const mealExecutionApi = apiSlice.injectEndpoints({
       invalidatesTags: invalidateTagsOnSuccess([
         'MealPlan',
         'Checkin',
+        'Dashboard',
         'Diet',
       ]),
     }),
@@ -145,6 +148,7 @@ export const mealExecutionApi = apiSlice.injectEndpoints({
       invalidatesTags: invalidateTagsOnSuccess([
         'MealPlan',
         'Checkin',
+        'Dashboard',
         'Diet',
       ]),
     }),

@@ -86,6 +86,8 @@ export const config = {
     '/api/meal-plans/:path*',
     '/api/progress',
     '/api/progress/:path*',
+    '/api/dashboard',
+    '/api/dashboard/:path*',
     '/api/checkins',
     '/api/checkins/:path*',
     '/api/meals',

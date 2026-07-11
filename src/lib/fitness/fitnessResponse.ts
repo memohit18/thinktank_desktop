@@ -1,4 +1,4 @@
-import type { FitnessProfile, PhysiqueGoal, PhysiqueGoalsResponse } from '@/lib/fitness/types';
+import type { FitnessProfile, FitnessPlans, PhysiqueGoal, PhysiqueGoalsResponse } from '@/lib/fitness/types';
 import { normalizePhysiqueGoal, normalizePhysiqueGoals } from '@/lib/fitness/physiqueGoalMapper';
 
 export type FitnessApiEnvelope<T> = {
@@ -122,6 +122,11 @@ export function unwrapFitnessProfile(response: unknown): FitnessProfile | null {
   const nestedPhysiqueGoal =
     profile.physiqueGoal ?? record.physique_goal ?? null;
 
+  const plansRaw =
+    (profile as FitnessProfile).plans ??
+    (record as { plans?: unknown }).plans ??
+    null;
+
   return {
     ...profile,
     id: String(profile.id),
@@ -157,7 +162,77 @@ export function unwrapFitnessProfile(response: unknown): FitnessProfile | null {
     physiqueGoal: nestedPhysiqueGoal
       ? normalizePhysiqueGoal(nestedPhysiqueGoal)
       : null,
+    plans: normalizeFitnessPlans(plansRaw),
     createdAt: profile.createdAt ?? record.created_at,
     updatedAt: profile.updatedAt ?? record.updated_at,
   };
+}
+
+function readPlanString(value: unknown, fallback = '') {
+  return typeof value === 'string' && value.trim() ? value.trim() : fallback;
+}
+
+export function normalizeFitnessPlans(raw: unknown): FitnessPlans | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const record = raw as Record<string, unknown>;
+  const nutritionRaw =
+    record.nutrition && typeof record.nutrition === 'object'
+      ? (record.nutrition as Record<string, unknown>)
+      : null;
+  const workoutRaw =
+    record.workout && typeof record.workout === 'object'
+      ? (record.workout as Record<string, unknown>)
+      : null;
+
+  const nutrition = nutritionRaw
+    ? {
+        dailyTarget:
+          readPlanString(nutritionRaw.dailyTarget) ||
+          (nutritionRaw.calories != null
+            ? `${Number(nutritionRaw.calories).toLocaleString()} kcal`
+            : ''),
+        proteinGoal:
+          readPlanString(nutritionRaw.proteinGoal) ||
+          (nutritionRaw.protein != null
+            ? `${Number(nutritionRaw.protein)} g`
+            : ''),
+        calories:
+          nutritionRaw.calories == null ? null : Number(nutritionRaw.calories),
+        protein:
+          nutritionRaw.protein == null ? null : Number(nutritionRaw.protein),
+        ready: Boolean(nutritionRaw.ready),
+      }
+    : null;
+
+  const workout = workoutRaw
+    ? {
+        frequency:
+          readPlanString(workoutRaw.frequency) ||
+          (workoutRaw.daysPerWeek != null
+            ? `${workoutRaw.daysPerWeek} days/week`
+            : ''),
+        focusArea: readPlanString(workoutRaw.focusArea) || '—',
+        daysPerWeek:
+          workoutRaw.daysPerWeek == null
+            ? null
+            : Number(workoutRaw.daysPerWeek),
+        fitnessGoal: readPlanString(workoutRaw.fitnessGoal) || null,
+        ready: Boolean(workoutRaw.ready),
+      }
+    : null;
+
+  return {
+    nutrition,
+    workout,
+    ready: Boolean(record.ready ?? (nutrition?.ready && workout?.ready)),
+    transformationId: readPlanString(record.transformationId) || null,
+    dietPlanId: readPlanString(record.dietPlanId) || null,
+    workoutPlanId: readPlanString(record.workoutPlanId) || null,
+  };
+}
+
+export function unwrapFitnessPlans(response: unknown): FitnessPlans | null {
+  if (isFitnessErrorEnvelope(response)) return null;
+  const data = unwrapFitnessData(response);
+  return normalizeFitnessPlans(data ?? response);
 }

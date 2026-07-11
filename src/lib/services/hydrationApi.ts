@@ -68,7 +68,7 @@ export const hydrationApi = apiSlice.injectEndpoints({
           patch.undo();
         }
       },
-      invalidatesTags: invalidateTagsOnSuccess(['Hydration', 'Checkin']),
+      invalidatesTags: invalidateTagsOnSuccess(['Hydration', 'Checkin', 'Dashboard']),
     }),
   }),
   overrideExisting: true,

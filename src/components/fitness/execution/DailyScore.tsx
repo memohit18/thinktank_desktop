@@ -102,15 +102,33 @@ export default function DailyScore({ checkin, isLoading }: DailyScoreProps) {
         <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           <BreakdownPill
             label="Meals"
-            value={mealsScore != null ? `${Math.round(mealsScore)}` : '—'}
+            value={
+              checkin?.meals.assigned
+                ? `${checkin.meals.completed}/${checkin.meals.assigned}`
+                : mealsScore != null
+                  ? `${Math.round(mealsScore)}`
+                  : '—'
+            }
           />
           <BreakdownPill
             label="Workout"
-            value={workoutScore != null ? `${Math.round(workoutScore)}` : '—'}
+            value={
+              checkin?.workout.completed
+                ? 'Done'
+                : workoutScore != null
+                  ? `${Math.round(workoutScore)}`
+                  : '—'
+            }
           />
           <BreakdownPill
             label="Water"
-            value={waterScore != null ? `${Math.round(waterScore)}` : '—'}
+            value={
+              checkin?.water.goalMl
+                ? `${(checkin.water.currentMl / 1000).toFixed(1)}/${(checkin.water.goalMl / 1000).toFixed(1)}L`
+                : waterScore != null
+                  ? `${Math.round(waterScore)}`
+                  : '—'
+            }
           />
           <BreakdownPill
             label="Calories"

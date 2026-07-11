@@ -79,6 +79,11 @@ export const proxyRoutes: ProxyRoute[] = [
     stripPrefix: '/api',
   },
   {
+    prefix: '/api/dashboard',
+    targetBaseUrl: SERVICE_API_URL,
+    stripPrefix: '/api',
+  },
+  {
     prefix: '/api/checkins',
     targetBaseUrl: SERVICE_API_URL,
     stripPrefix: '/api',

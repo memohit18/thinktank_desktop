@@ -37,7 +37,7 @@ export const dailyApi = apiSlice.injectEndpoints({
     refreshTodayCheckin: builder.mutation<DailyCheckinScore | null, void>({
       query: () => dailyService.refresh(),
       transformResponse: (response: unknown) => unwrapDailyCheckin(response),
-      invalidatesTags: invalidateTagsOnSuccess(['Checkin']),
+      invalidatesTags: invalidateTagsOnSuccess(['Checkin', 'Dashboard']),
     }),
   }),
   overrideExisting: true,

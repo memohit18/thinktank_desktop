@@ -75,10 +75,36 @@ export type PhysiqueGoal = {
   imageUrl: string;
 };
 
+export type FitnessPlanNutrition = {
+  dailyTarget: string;
+  proteinGoal: string;
+  calories?: number | null;
+  protein?: number | null;
+  ready: boolean;
+};
+
+export type FitnessPlanWorkout = {
+  frequency: string;
+  focusArea: string;
+  daysPerWeek?: number | null;
+  fitnessGoal?: string | null;
+  ready: boolean;
+};
+
+export type FitnessPlans = {
+  nutrition: FitnessPlanNutrition | null;
+  workout: FitnessPlanWorkout | null;
+  ready: boolean;
+  transformationId?: string | null;
+  dietPlanId?: string | null;
+  workoutPlanId?: string | null;
+};
+
 export type FitnessProfile = FitnessProfilePayload & {
   id: string;
   onboardingCompleted: boolean;
   physiqueGoal?: PhysiqueGoal | null;
+  plans?: FitnessPlans | null;
   createdAt?: string;
   updatedAt?: string;
 };

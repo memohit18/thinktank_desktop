@@ -1,5 +1,6 @@
 import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type {
+  FitnessPlans,
   FitnessProfile,
   FitnessProfilePayload,
   PhysiqueGoal,
@@ -8,6 +9,7 @@ import {
   isFitnessErrorEnvelope,
   isMissingFitnessProfileStatus,
   unwrapFitnessData,
+  unwrapFitnessPlans,
   unwrapFitnessProfile,
   unwrapPhysiqueGoals,
 } from '@/lib/fitness/fitnessResponse';
@@ -87,6 +89,31 @@ export const fitnessApi = apiSlice.injectEndpoints({
       providesTags: ['FitnessProfile'],
       ...fitnessProfileQueryOptions,
     }),
+    getFitnessPlans: builder.query<FitnessPlans | null, void>({
+      async queryFn(_arg, _queryApi, _extraOptions, baseQuery) {
+        const result = await baseQuery('/fitness/plans');
+        if (result.error) {
+          if (isMissingFitnessProfileStatus(result.error.status)) {
+            return { data: null };
+          }
+          return { error: result.error };
+        }
+        if (isFitnessErrorEnvelope(result.data)) {
+          if (isMissingFitnessProfileStatus(result.data.statusCode)) {
+            return { data: null };
+          }
+          return {
+            error: {
+              status: result.data.statusCode,
+              data: result.data,
+            } satisfies FetchBaseQueryError,
+          };
+        }
+        return { data: unwrapFitnessPlans(result.data) };
+      },
+      providesTags: ['FitnessProfile', 'Transformation'],
+      ...fitnessProfileQueryOptions,
+    }),
     createFitnessProfile: builder.mutation<FitnessProfile, FitnessProfilePayload>({
       query: (body) => ({
         url: '/fitness/profile',
@@ -135,6 +162,10 @@ export const useGetFitnessGoalsQuery = withQueryDefaults(
 );
 export const useGetFitnessProfileQuery = withQueryDefaults(
   fitnessApi.useGetFitnessProfileQuery,
+  RTK_QUERY_FRESH_CACHE,
+);
+export const useGetFitnessPlansQuery = withQueryDefaults(
+  fitnessApi.useGetFitnessPlansQuery,
   RTK_QUERY_FRESH_CACHE,
 );
 

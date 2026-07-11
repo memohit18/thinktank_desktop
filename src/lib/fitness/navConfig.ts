@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 export type FitnessModuleNavId =
+  | 'dashboard'
   | 'transformation'
   | 'setup'
   | 'nutrition'
@@ -20,6 +21,13 @@ export type FitnessModuleNavId =
   | 'analytics';
 
 export const FITNESS_MODULE_NAV_ITEMS = [
+  {
+    id: 'dashboard' as const,
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    href: '/fitness/dashboard',
+    disabled: false,
+  },
   {
     id: 'transformation' as const,
     label: 'Transformation',
