@@ -193,6 +193,18 @@ export const foodApi = apiSlice.injectEndpoints({
         ] as const;
       }),
     }),
+    deleteFood: builder.mutation<{ ok: boolean }, string>({
+      query: (foodId) => foodsService.delete(foodId),
+      transformResponse: () => ({ ok: true }),
+      invalidatesTags: invalidateTagsOnSuccess((_result, foodId) => {
+        return [
+          { type: 'Foods', id: foodId as string },
+          { type: 'Foods', id: 'LIST' },
+          'FoodCategories',
+          'FoodPreferences',
+        ] as const;
+      }),
+    }),
   }),
   overrideExisting: true,
 });
@@ -204,6 +216,7 @@ export const {
   useCreateCustomFoodMutation,
   useCreateCatalogFoodMutation,
   useUpdateFoodMutation,
+  useDeleteFoodMutation,
 } = foodApi;
 
 export const useGetFoodsQuery = withQueryDefaults(

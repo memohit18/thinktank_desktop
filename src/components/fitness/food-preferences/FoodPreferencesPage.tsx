@@ -28,6 +28,7 @@ import { useSaveFood } from '@/hooks/useSaveFood';
 import { useSaveFoodPreferences } from '@/hooks/useSaveFoodPreferences';
 import { useSaveNutritionPreferences } from '@/hooks/useSaveNutritionPreferences';
 import { useUpdateFood } from '@/hooks/useUpdateFood';
+import { useDeleteFood } from '@/hooks/useDeleteFood';
 import {
   FOOD_PREFERENCE_MIN_FAVORITES,
 } from '@/lib/fitness/food/constants';
@@ -141,6 +142,9 @@ export default function FoodPreferencesPage() {
   });
 
   const { updateFood, isUpdating: isUpdatingFood } = useUpdateFood();
+  const { deleteFood, isDeleting: isDeletingFood } = useDeleteFood({
+    onDeleted: () => setEditingFood(null),
+  });
 
   const favoriteFoodIds = useWatch({
     control: foodForm.control,
@@ -267,6 +271,10 @@ export default function FoodPreferencesPage() {
   ) {
     const food = await updateFood(foodId, values, options);
     return Boolean(food);
+  }
+
+  async function handleDeleteFood(foodId: string) {
+    return deleteFood(foodId);
   }
 
   async function handleSave() {
@@ -582,8 +590,10 @@ export default function FoodPreferencesPage() {
         food={editingFood}
         categories={categoryOptions}
         isSubmitting={isUpdatingFood}
+        isDeleting={isDeletingFood}
         onClose={() => setEditingFood(null)}
         onSubmit={handleUpdateFood}
+        onDelete={handleDeleteFood}
       />
     </FitnessModuleShell>
   );

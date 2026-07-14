@@ -13,6 +13,7 @@ export {
   useCreateCustomFoodMutation,
   useCreateCatalogFoodMutation,
   useUpdateFoodMutation,
+  useDeleteFoodMutation,
 } from '@/lib/services/foodApi';
 
 export { foodsService } from '@/lib/services/foods.service';

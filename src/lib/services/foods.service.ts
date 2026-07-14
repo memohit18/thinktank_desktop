@@ -25,4 +25,10 @@ export const foodsService = {
       body: payload,
     };
   },
+  delete(foodId: string) {
+    return {
+      url: `/foods/${foodId}`,
+      method: 'DELETE' as const,
+    };
+  },
 };
