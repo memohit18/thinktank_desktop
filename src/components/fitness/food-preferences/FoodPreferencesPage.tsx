@@ -128,6 +128,7 @@ export default function FoodPreferencesPage() {
   const [isCreateCustomOpen, setIsCreateCustomOpen] = useState(false);
   const [isCreateCatalogOpen, setIsCreateCatalogOpen] = useState(false);
   const [editingFood, setEditingFood] = useState<Food | null>(null);
+  const [deletingFoodId, setDeletingFoodId] = useState<string | null>(null);
 
   const isAdmin = useIsAdmin();
   const categoryOptions =
@@ -274,7 +275,16 @@ export default function FoodPreferencesPage() {
   }
 
   async function handleDeleteFood(foodId: string) {
-    return deleteFood(foodId);
+    setDeletingFoodId(foodId);
+    try {
+      return await deleteFood(foodId);
+    } finally {
+      setDeletingFoodId(null);
+    }
+  }
+
+  async function handleDeleteFoodFromCard(food: Food) {
+    return handleDeleteFood(food.id);
   }
 
   async function handleSave() {
@@ -457,8 +467,10 @@ export default function FoodPreferencesPage() {
             restrictedFoodIds={restrictedFoodIds}
             availableFoodIds={availableFoodIds}
             isAdmin={isAdmin}
+            deletingFoodId={deletingFoodId}
             onToggle={handleToggle}
             onEditFood={setEditingFood}
+            onDeleteFood={handleDeleteFoodFromCard}
             isLoading={isFoodsFetching}
           />
 

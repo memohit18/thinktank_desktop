@@ -11,13 +11,15 @@ type FoodGridProps = {
   restrictedFoodIds: string[];
   availableFoodIds: string[];
   isAdmin?: boolean;
+  deletingFoodId?: string | null;
   onToggle: (foodId: string, action: FoodPreferenceAction) => void;
   onEditFood?: (food: Food) => void;
+  onDeleteFood?: (food: Food) => void | Promise<boolean>;
   isLoading?: boolean;
   emptyMessage?: string;
 };
 
-function canEditFood(food: Food, isAdmin: boolean) {
+function canManageFood(food: Food, isAdmin: boolean) {
   if (food.isCustom) return true;
   return isAdmin && Boolean(food.isVerified);
 }
@@ -30,8 +32,10 @@ function FoodGrid({
   restrictedFoodIds,
   availableFoodIds,
   isAdmin = false,
+  deletingFoodId = null,
   onToggle,
   onEditFood,
+  onDeleteFood,
   isLoading = false,
   emptyMessage = 'No foods match your search or category filter.',
 }: FoodGridProps) {
@@ -54,18 +58,27 @@ function FoodGrid({
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {foods.map((food) => (
-        <FoodCard
-          key={food.id}
-          food={food}
-          isFavorite={favoriteFoodIds.includes(food.id)}
-          isRestricted={restrictedFoodIds.includes(food.id)}
-          isAvailable={availableFoodIds.includes(food.id)}
-          canEdit={canEditFood(food, isAdmin)}
-          onEdit={onEditFood ? () => onEditFood(food) : undefined}
-          onToggle={(action) => onToggle(food.id, action)}
-        />
-      ))}
+      {foods.map((food) => {
+        const canManage = canManageFood(food, isAdmin);
+        return (
+          <FoodCard
+            key={food.id}
+            food={food}
+            isFavorite={favoriteFoodIds.includes(food.id)}
+            isRestricted={restrictedFoodIds.includes(food.id)}
+            isAvailable={availableFoodIds.includes(food.id)}
+            canEdit={canManage}
+            isDeleting={deletingFoodId === food.id}
+            onEdit={onEditFood ? () => onEditFood(food) : undefined}
+            onDelete={
+              onDeleteFood && canManage
+                ? () => onDeleteFood(food)
+                : undefined
+            }
+            onToggle={(action) => onToggle(food.id, action)}
+          />
+        );
+      })}
     </div>
   );
 }
