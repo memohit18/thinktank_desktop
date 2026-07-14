@@ -2,12 +2,14 @@
 
 import type { SettingsSectionId } from '@/lib/settings/types';
 import ModuleSettingsSection from '@/components/settings/ModuleSettingsSection';
+import ProfileImagesSection from '@/components/settings/ProfileImagesSection';
 import ProfileSettingsSection from '@/components/settings/ProfileSettingsSection';
 import SidebarNavSettingsSection from '@/components/settings/SidebarNavSettingsSection';
 import { useSettings } from '@/providers/SettingsProvider';
 
 const SECTIONS: { id: SettingsSectionId; label: string; hint: string }[] = [
   { id: 'profile', label: 'Profile', hint: 'Edit your account details' },
+  { id: 'images', label: 'Images', hint: 'Browse and upload profile images' },
   { id: 'sidebar', label: 'Sidebar', hint: 'Show or hide nav links' },
   { id: 'modules', label: 'Modules', hint: 'Enable and set view mode' },
 ];
@@ -57,6 +59,7 @@ export default function SettingsPage() {
 
         <div>
           {activeSection === 'profile' ? <ProfileSettingsSection /> : null}
+          {activeSection === 'images' ? <ProfileImagesSection /> : null}
           {activeSection === 'sidebar' ? <SidebarNavSettingsSection /> : null}
           {activeSection === 'modules' ? <ModuleSettingsSection /> : null}
         </div>

@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import FitnessApiErrorState from '@/components/fitness/FitnessApiErrorState';
 import FitnessModuleShell from '@/components/fitness/FitnessModuleShell';
-import FloatingCoach from '@/components/fitness/coach/FloatingCoach';
 import AnalyticsCards from '@/components/fitness/progress/AnalyticsCards';
 import BodyFatChart from '@/components/fitness/progress/BodyFatChart';
 import LoadingSkeleton from '@/components/fitness/progress/LoadingSkeleton';
@@ -196,7 +195,6 @@ export default function ProgressPage() {
           }}
         />
       </div>
-      <FloatingCoach />
     </FitnessModuleShell>
   );
 }

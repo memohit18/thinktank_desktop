@@ -34,8 +34,17 @@ export default function FoodCard({
       }`}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="flex size-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
-          <UtensilsCrossed className="size-5" />
+        <div className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-accent/10 text-accent">
+          {food.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={food.imageUrl}
+              alt=""
+              className="size-full object-cover"
+            />
+          ) : (
+            <UtensilsCrossed className="size-5" />
+          )}
         </div>
         {canEdit ? (
           <button

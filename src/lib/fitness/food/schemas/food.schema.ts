@@ -21,6 +21,8 @@ export const createFoodSchema = z.object({
   protein: optionalNumber,
   carbs: optionalNumber,
   fats: optionalNumber,
+  averageCost: optionalNumber,
+  imageUrl: z.string().optional(),
 });
 
 export const updateFoodSchema = createFoodSchema
@@ -42,6 +44,8 @@ export const EMPTY_FOOD_FORM_VALUES = {
   protein: '',
   carbs: '',
   fats: '',
+  averageCost: '',
+  imageUrl: '',
 } as const;
 
 export function mapFoodToFormValues(food: {
@@ -53,6 +57,8 @@ export function mapFoodToFormValues(food: {
   protein?: number | null;
   carbs?: number | null;
   fats?: number | null;
+  averageCost?: number | null;
+  imageUrl?: string | null;
 }) {
   return {
     name: food.name,
@@ -63,6 +69,8 @@ export function mapFoodToFormValues(food: {
     protein: food.protein != null ? String(food.protein) : '',
     carbs: food.carbs != null ? String(food.carbs) : '',
     fats: food.fats != null ? String(food.fats) : '',
+    averageCost: food.averageCost != null ? String(food.averageCost) : '',
+    imageUrl: food.imageUrl ?? '',
   };
 }
 
@@ -78,6 +86,8 @@ export function toCreateFoodPayload(
     protein: values.protein,
     carbs: values.carbs,
     fats: values.fats,
+    averageCost: values.averageCost,
+    imageUrl: values.imageUrl?.trim() || undefined,
   };
 }
 
@@ -103,6 +113,10 @@ export function toUpdateFoodPayload(
   if (values.protein !== undefined) payload.protein = values.protein;
   if (values.carbs !== undefined) payload.carbs = values.carbs;
   if (values.fats !== undefined) payload.fats = values.fats;
+  if (values.averageCost !== undefined) payload.averageCost = values.averageCost;
+  if (values.imageUrl !== undefined) {
+    payload.imageUrl = values.imageUrl.trim() || null;
+  }
 
   return payload;
 }

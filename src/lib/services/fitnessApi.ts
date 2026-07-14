@@ -4,6 +4,8 @@ import type {
   FitnessProfile,
   FitnessProfilePayload,
   PhysiqueGoal,
+  CreatePhysiqueGoalPayload,
+  UpdatePhysiqueGoalPayload,
 } from '@/lib/fitness/types';
 import {
   isFitnessErrorEnvelope,
@@ -13,8 +15,13 @@ import {
   unwrapFitnessProfile,
   unwrapPhysiqueGoals,
 } from '@/lib/fitness/fitnessResponse';
+import { normalizePhysiqueGoal } from '@/lib/fitness/physiqueGoalMapper';
 import { apiSlice } from './apiSlice';
-import { RTK_QUERY_FRESH_CACHE, withQueryDefaults } from './rtkQueryDefaults';
+import {
+  RTK_QUERY_FRESH_CACHE,
+  invalidateTagsOnSuccess,
+  withQueryDefaults,
+} from './rtkQueryDefaults';
 
 const fitnessProfileQueryOptions = {
   keepUnusedDataFor: RTK_QUERY_FRESH_CACHE.keepUnusedDataFor,
@@ -147,6 +154,47 @@ export const fitnessApi = apiSlice.injectEndpoints({
       },
       invalidatesTags: ['FitnessProfile', 'Transformation'],
     }),
+    createFitnessGoal: builder.mutation<PhysiqueGoal, CreatePhysiqueGoalPayload>({
+      query: (body) => ({
+        url: '/fitness/goals',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      }),
+      transformResponse: (response: unknown) => {
+        const data = unwrapFitnessData(response) ?? response;
+        const goal = normalizePhysiqueGoal(
+          data && typeof data === 'object' && 'goal' in (data as object)
+            ? (data as { goal: unknown }).goal
+            : data,
+        );
+        if (!goal) throw new Error('Invalid fitness goal response');
+        return goal;
+      },
+      invalidatesTags: invalidateTagsOnSuccess(['FitnessGoals']),
+    }),
+    updateFitnessGoal: builder.mutation<
+      PhysiqueGoal,
+      { goalId: string; body: UpdatePhysiqueGoalPayload }
+    >({
+      query: ({ goalId, body }) => ({
+        url: `/fitness/goals/${encodeURIComponent(goalId)}`,
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      }),
+      transformResponse: (response: unknown) => {
+        const data = unwrapFitnessData(response) ?? response;
+        const goal = normalizePhysiqueGoal(
+          data && typeof data === 'object' && 'goal' in (data as object)
+            ? (data as { goal: unknown }).goal
+            : data,
+        );
+        if (!goal) throw new Error('Invalid fitness goal response');
+        return goal;
+      },
+      invalidatesTags: invalidateTagsOnSuccess(['FitnessGoals']),
+    }),
   }),
   overrideExisting: true,
 });
@@ -154,6 +202,8 @@ export const fitnessApi = apiSlice.injectEndpoints({
 export const {
   useCreateFitnessProfileMutation,
   useUpdateFitnessProfileMutation,
+  useCreateFitnessGoalMutation,
+  useUpdateFitnessGoalMutation,
 } = fitnessApi;
 
 export const useGetFitnessGoalsQuery = withQueryDefaults(

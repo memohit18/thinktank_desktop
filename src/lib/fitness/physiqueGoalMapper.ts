@@ -64,15 +64,31 @@ function shouldPreferLocalPhysiqueImage(url: string) {
   }
 }
 
+function readNullableNumber(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return null;
+}
+
 export function resolvePhysiqueGoalImage(goal: Pick<PhysiqueGoal, 'id' | 'title' | 'imageUrl'>) {
   const slug = slugify(goal.title || goal.id);
   const fallback = resolveFallbackImage(slug, goal.id);
 
   if (
     isUsableRemoteImageUrl(goal.imageUrl) &&
-    !goal.imageUrl.startsWith('/uploads') &&
     !shouldPreferLocalPhysiqueImage(goal.imageUrl)
   ) {
+    // Keep absolute CDN / R2 URLs (including .../uploads/.../medium.webp).
+    // Only skip relative "/uploads" paths that are not resolvable in the browser.
+    if (goal.imageUrl.startsWith('/uploads')) {
+      return fallback;
+    }
     return goal.imageUrl;
   }
 
@@ -107,6 +123,16 @@ export function normalizePhysiqueGoal(raw: unknown): PhysiqueGoal | null {
     title,
     description,
     imageUrl: apiImageUrl,
+    targetBodyFatMin: readNullableNumber(record, [
+      'targetBodyFatMin',
+      'target_body_fat_min',
+      'bodyFatMin',
+    ]),
+    targetBodyFatMax: readNullableNumber(record, [
+      'targetBodyFatMax',
+      'target_body_fat_max',
+      'bodyFatMax',
+    ]),
   };
 
   return {

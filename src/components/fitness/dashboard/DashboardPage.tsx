@@ -12,7 +12,6 @@ import WaterTracker from '@/components/fitness/dashboard/WaterTracker';
 import WorkoutProgress from '@/components/fitness/dashboard/WorkoutProgress';
 import FitnessApiErrorState from '@/components/fitness/FitnessApiErrorState';
 import FitnessModuleShell from '@/components/fitness/FitnessModuleShell';
-import FloatingCoach from '@/components/fitness/execution/FloatingCoach';
 import { useCompliance } from '@/hooks/useCompliance';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useHydration } from '@/hooks/useHydration';
@@ -141,7 +140,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <FloatingCoach />
     </FitnessModuleShell>
   );
 }

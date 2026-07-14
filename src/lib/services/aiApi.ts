@@ -14,7 +14,7 @@ import {
 import { aiService } from '@/lib/services/ai.service';
 import { apiSlice } from './apiSlice';
 import {
-  RTK_QUERY_FRESH_CACHE,
+  RTK_QUERY_STABLE_CACHE,
   invalidateTagsOnSuccess,
   withQueryDefaults,
 } from './rtkQueryDefaults';
@@ -60,7 +60,7 @@ export const aiApi = apiSlice.injectEndpoints({
         return { data: unwrapAiHistory(result.data) };
       },
       providesTags: ['AiChat'],
-      keepUnusedDataFor: RTK_QUERY_FRESH_CACHE.keepUnusedDataFor,
+      keepUnusedDataFor: RTK_QUERY_STABLE_CACHE.keepUnusedDataFor,
     }),
 
     /** DELETE /ai/history/:id — turn id or session id */
@@ -74,7 +74,7 @@ export const aiApi = apiSlice.injectEndpoints({
 
 export const useGetAiHistoryQuery = withQueryDefaults(
   aiApi.useGetAiHistoryQuery,
-  RTK_QUERY_FRESH_CACHE,
+  RTK_QUERY_STABLE_CACHE,
 );
 
 export const { useSendAiChatMutation, useDeleteAiHistoryMutation } = aiApi;

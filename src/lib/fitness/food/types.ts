@@ -119,4 +119,6 @@ export type FoodFormValues = {
   protein: string;
   carbs: string;
   fats: string;
+  averageCost: string;
+  imageUrl: string;
 };

@@ -45,6 +45,8 @@ export default function EditFoodModal({
   const foodId = food.id;
 
   async function handleSubmit(removeCategory = false) {
+    if (isSubmitting) return;
+
     const parsed = updateFoodSchema.safeParse({
       ...values,
       dietType: values.dietType || undefined,
@@ -53,6 +55,8 @@ export default function EditFoodModal({
       protein: values.protein || undefined,
       carbs: values.carbs || undefined,
       fats: values.fats || undefined,
+      averageCost: values.averageCost || undefined,
+      imageUrl: values.imageUrl || undefined,
       category: removeCategory ? '' : values.category || undefined,
     });
 
@@ -101,6 +105,7 @@ export default function EditFoodModal({
           errors={errors}
           categories={categories}
           allowNoCategory
+          disabled={isSubmitting}
           onChange={(field, value) => {
             setValues((current) => ({ ...current, [field]: value }));
             setErrors((current) => ({ ...current, [field]: '' }));

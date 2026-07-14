@@ -4,7 +4,6 @@ import { useState } from 'react';
 import FitnessApiErrorState from '@/components/fitness/FitnessApiErrorState';
 import FitnessModuleShell from '@/components/fitness/FitnessModuleShell';
 import DailyScore from '@/components/fitness/execution/DailyScore';
-import FloatingCoach from '@/components/fitness/execution/FloatingCoach';
 import HydrationWidget from '@/components/fitness/execution/HydrationWidget';
 import FinishWorkoutDialog from '@/components/fitness/workout/FinishWorkoutDialog';
 import WorkoutHero from '@/components/fitness/workout/WorkoutHero';
@@ -161,7 +160,6 @@ export default function WorkoutPage() {
           return ok;
         }}
       />
-      <FloatingCoach />
     </FitnessModuleShell>
   );
 }

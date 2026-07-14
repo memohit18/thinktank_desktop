@@ -32,4 +32,4 @@ export type PortalSettings = {
   modules: ModuleSettings[];
 };
 
-export type SettingsSectionId = 'profile' | 'sidebar' | 'modules';
+export type SettingsSectionId = 'profile' | 'images' | 'sidebar' | 'modules';

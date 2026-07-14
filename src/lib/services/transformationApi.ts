@@ -14,10 +14,10 @@ import {
   unwrapTransformationMilestones,
 } from '@/lib/fitness/transformation/transformationResponse';
 import { apiSlice } from './apiSlice';
-import { RTK_QUERY_FRESH_CACHE, withQueryDefaults } from './rtkQueryDefaults';
+import { RTK_QUERY_FRESH_CACHE, RTK_QUERY_STABLE_CACHE, withQueryDefaults } from './rtkQueryDefaults';
 
 const transformationQueryOptions = {
-  keepUnusedDataFor: RTK_QUERY_FRESH_CACHE.keepUnusedDataFor,
+  keepUnusedDataFor: RTK_QUERY_STABLE_CACHE.keepUnusedDataFor,
 };
 
 export type TransformationHistoryParams = {
@@ -100,13 +100,13 @@ export const {
 
 export const useGetActiveTransformationQuery = withQueryDefaults(
   transformationApi.useGetActiveTransformationQuery,
-  RTK_QUERY_FRESH_CACHE,
+  RTK_QUERY_STABLE_CACHE,
 );
 export const useGetTransformationHistoryQuery = withQueryDefaults(
   transformationApi.useGetTransformationHistoryQuery,
-  RTK_QUERY_FRESH_CACHE,
+  RTK_QUERY_STABLE_CACHE,
 );
 export const useGetTransformationMilestonesQuery = withQueryDefaults(
   transformationApi.useGetTransformationMilestonesQuery,
-  RTK_QUERY_FRESH_CACHE,
+  RTK_QUERY_STABLE_CACHE,
 );

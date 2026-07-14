@@ -100,6 +100,8 @@ export const config = {
     '/api/ai/:path*',
     '/api/uploads',
     '/api/uploads/:path*',
+    '/api/images',
+    '/api/images/:path*',
     '/api/code/:path*',
   ],
 };

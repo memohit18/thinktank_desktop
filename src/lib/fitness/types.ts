@@ -73,7 +73,19 @@ export type PhysiqueGoal = {
   title: string;
   description: string;
   imageUrl: string;
+  targetBodyFatMin?: number | null;
+  targetBodyFatMax?: number | null;
 };
+
+export type CreatePhysiqueGoalPayload = {
+  title: string;
+  description: string;
+  imageUrl?: string | null;
+  targetBodyFatMin?: number | null;
+  targetBodyFatMax?: number | null;
+};
+
+export type UpdatePhysiqueGoalPayload = Partial<CreatePhysiqueGoalPayload>;
 
 export type FitnessPlanNutrition = {
   dailyTarget: string;

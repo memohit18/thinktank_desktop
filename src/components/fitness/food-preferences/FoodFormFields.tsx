@@ -1,5 +1,6 @@
 'use client';
 
+import ImageUrlField from '@/components/images/ImageUrlField';
 import type { FoodCategory } from '@/lib/fitness/food/types';
 import { FormField, FormSelect } from '@/components/fitness/setup/FormFields';
 
@@ -11,28 +12,28 @@ const DIET_TYPE_OPTIONS = [
   { value: 'vegan', label: 'Vegan' },
 ];
 
+type FoodFormFieldValues = {
+  name: string;
+  category: string;
+  dietType: string;
+  servingSize: string;
+  calories: string;
+  protein: string;
+  carbs: string;
+  fats: string;
+  averageCost: string;
+  imageUrl: string;
+};
+
 type FoodFormFieldsProps = {
-  values: {
-    name: string;
-    category: string;
-    dietType: string;
-    servingSize: string;
-    calories: string;
-    protein: string;
-    carbs: string;
-    fats: string;
-  };
-  errors: Partial<
-    Record<
-      'name' | 'category' | 'dietType' | 'servingSize' | 'calories' | 'protein' | 'carbs' | 'fats',
-      string
-    >
-  >;
+  values: FoodFormFieldValues;
+  errors: Partial<Record<keyof FoodFormFieldValues, string>>;
   categories: FoodCategory[];
   allowNoCategory?: boolean;
-  onChange: <K extends keyof FoodFormFieldsProps['values']>(
+  disabled?: boolean;
+  onChange: <K extends keyof FoodFormFieldValues>(
     field: K,
-    value: FoodFormFieldsProps['values'][K],
+    value: FoodFormFieldValues[K],
   ) => void;
 };
 
@@ -41,6 +42,7 @@ export default function FoodFormFields({
   errors,
   categories,
   allowNoCategory = false,
+  disabled = false,
   onChange,
 }: FoodFormFieldsProps) {
   const categoryOptions = [
@@ -60,6 +62,20 @@ export default function FoodFormFields({
           onChange={(event) => onChange('name', event.target.value)}
           placeholder="e.g. Mom's Paneer Curry"
           error={errors.name}
+          disabled={disabled}
+        />
+      </div>
+
+      <div className="sm:col-span-2">
+        <ImageUrlField
+          label="Food image"
+          value={values.imageUrl || null}
+          disabled={disabled}
+          error={errors.imageUrl}
+          uploadType="food"
+          pickerTitle="Choose food image"
+          pickerDescription="Pick an uploaded image, then choose a size"
+          onChange={(imageUrl) => onChange('imageUrl', imageUrl ?? '')}
         />
       </div>
 
@@ -69,6 +85,7 @@ export default function FoodFormFields({
         onChange={(value) => onChange('category', value)}
         options={categoryOptions}
         error={errors.category}
+        disabled={disabled}
       />
 
       <FormSelect
@@ -77,6 +94,7 @@ export default function FoodFormFields({
         onChange={(value) => onChange('dietType', value)}
         options={DIET_TYPE_OPTIONS}
         error={errors.dietType}
+        disabled={disabled}
       />
 
       <FormField
@@ -85,6 +103,19 @@ export default function FoodFormFields({
         onChange={(event) => onChange('servingSize', event.target.value)}
         placeholder="e.g. 1 bowl"
         error={errors.servingSize}
+        disabled={disabled}
+      />
+
+      <FormField
+        label="Average cost"
+        type="number"
+        min={0}
+        step="0.01"
+        value={values.averageCost}
+        onChange={(event) => onChange('averageCost', event.target.value)}
+        placeholder="120"
+        error={errors.averageCost}
+        disabled={disabled}
       />
 
       <FormField
@@ -95,6 +126,7 @@ export default function FoodFormFields({
         onChange={(event) => onChange('calories', event.target.value)}
         placeholder="320"
         error={errors.calories}
+        disabled={disabled}
       />
 
       <FormField
@@ -106,6 +138,7 @@ export default function FoodFormFields({
         onChange={(event) => onChange('protein', event.target.value)}
         placeholder="18"
         error={errors.protein}
+        disabled={disabled}
       />
 
       <FormField
@@ -117,6 +150,7 @@ export default function FoodFormFields({
         onChange={(event) => onChange('carbs', event.target.value)}
         placeholder="12"
         error={errors.carbs}
+        disabled={disabled}
       />
 
       <FormField
@@ -128,6 +162,7 @@ export default function FoodFormFields({
         onChange={(event) => onChange('fats', event.target.value)}
         placeholder="22"
         error={errors.fats}
+        disabled={disabled}
       />
     </div>
   );

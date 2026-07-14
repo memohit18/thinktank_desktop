@@ -51,6 +51,8 @@ export default function FoodFormModal({
       protein: values.protein || undefined,
       carbs: values.carbs || undefined,
       fats: values.fats || undefined,
+      averageCost: values.averageCost || undefined,
+      imageUrl: values.imageUrl || undefined,
     });
 
     if (!parsed.success) {
@@ -95,6 +97,7 @@ export default function FoodFormModal({
           values={values}
           errors={errors}
           categories={categories}
+          disabled={isSubmitting}
           onChange={(field, value) => {
             setValues((current) => ({ ...current, [field]: value }));
             setErrors((current) => ({ ...current, [field]: '' }));

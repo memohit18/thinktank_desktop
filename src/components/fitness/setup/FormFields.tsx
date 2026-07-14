@@ -84,6 +84,7 @@ type FormSelectProps = {
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   error?: string;
+  disabled?: boolean;
 };
 
 export function FormSelect({
@@ -92,6 +93,7 @@ export function FormSelect({
   onChange,
   options,
   error,
+  disabled = false,
 }: FormSelectProps) {
   const fieldId = label.toLowerCase().replace(/\s+/g, '-');
 
@@ -103,8 +105,9 @@ export function FormSelect({
       <select
         id={fieldId}
         value={value}
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+        className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <option value="">Select...</option>
         {options.map((option) => (

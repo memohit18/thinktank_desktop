@@ -4,7 +4,6 @@ import { useMemo, useRef, useState, type TouchEvent } from 'react';
 import FitnessApiErrorState from '@/components/fitness/FitnessApiErrorState';
 import FitnessModuleShell from '@/components/fitness/FitnessModuleShell';
 import DailyScore from '@/components/fitness/execution/DailyScore';
-import FloatingCoach from '@/components/fitness/execution/FloatingCoach';
 import HydrationWidget from '@/components/fitness/execution/HydrationWidget';
 import MealExecutionCard from '@/components/fitness/execution/MealExecutionCard';
 import HistoryDrawer from '@/components/fitness/meals/HistoryDrawer';
@@ -343,7 +342,6 @@ export default function MealsPage() {
           return ok;
         }}
       />
-      <FloatingCoach />
     </FitnessModuleShell>
   );
 }
