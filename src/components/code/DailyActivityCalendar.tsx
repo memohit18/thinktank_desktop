@@ -48,9 +48,17 @@ function formatMonthLabel(monthKey: string) {
   });
 }
 
-export default function DailyActivityCalendar() {
+type DailyActivityCalendarProps = {
+  /** Compact = small widget; dashboard = larger full card. */
+  variant?: 'compact' | 'dashboard';
+};
+
+export default function DailyActivityCalendar({
+  variant = 'compact',
+}: DailyActivityCalendarProps) {
   const [monthKey, setMonthKey] = useState(() => formatMonthKey(new Date()));
   const { data, isLoading, isError } = useGetDailyActivityQuery({ month: monthKey });
+  const isDashboard = variant === 'dashboard';
 
   const calendarCells = useMemo(() => {
     if (!data) return [];
@@ -60,13 +68,25 @@ export default function DailyActivityCalendar() {
   }, [data]);
 
   return (
-    <div className="flex h-full flex-col justify-center rounded-xl border border-border bg-card p-2.5 shadow-sm">
+    <div
+      className={`flex h-full flex-col rounded-2xl border border-border bg-card shadow-sm ${
+        isDashboard ? 'p-5 sm:p-6' : 'justify-center p-2.5'
+      }`}
+    >
       <div className="flex shrink-0 items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs font-bold leading-tight text-foreground">
+          <p
+            className={`font-bold leading-tight text-foreground ${
+              isDashboard ? 'text-base sm:text-lg' : 'text-xs'
+            }`}
+          >
             {formatMonthLabel(monthKey)}
           </p>
-          <p className="text-[9px] leading-tight text-muted-foreground">
+          <p
+            className={`leading-tight text-muted-foreground ${
+              isDashboard ? 'mt-0.5 text-xs sm:text-sm' : 'text-[9px]'
+            }`}
+          >
             Daily Activity
             {data ? ` • ${data.summary.activeDays} active days` : ''}
           </p>
@@ -76,14 +96,20 @@ export default function DailyActivityCalendar() {
             type="button"
             onClick={() => setMonthKey((current) => shiftMonthKey(current, -1))}
             aria-label="Previous month"
-            className="flex size-5 items-center justify-center rounded border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className={`flex items-center justify-center rounded border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${
+              isDashboard ? 'size-8' : 'size-5'
+            }`}
           >
-            <ChevronLeftIcon className="size-2.5" />
+            <ChevronLeftIcon className={isDashboard ? 'size-4' : 'size-2.5'} />
           </button>
           <button
             type="button"
             onClick={() => setMonthKey(formatMonthKey(new Date()))}
-            className="rounded border border-border px-1 py-px text-[9px] font-semibold text-foreground transition-colors hover:bg-muted"
+            className={`rounded border border-border font-semibold text-foreground transition-colors hover:bg-muted ${
+              isDashboard
+                ? 'px-2.5 py-1.5 text-xs'
+                : 'px-1 py-px text-[9px]'
+            }`}
           >
             Today
           </button>
@@ -91,34 +117,59 @@ export default function DailyActivityCalendar() {
             type="button"
             onClick={() => setMonthKey((current) => shiftMonthKey(current, 1))}
             aria-label="Next month"
-            className="flex size-5 items-center justify-center rounded border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className={`flex items-center justify-center rounded border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${
+              isDashboard ? 'size-8' : 'size-5'
+            }`}
           >
-            <ChevronRightIcon className="size-2.5" />
+            <ChevronRightIcon className={isDashboard ? 'size-4' : 'size-2.5'} />
           </button>
         </div>
       </div>
 
       {isLoading ? (
-        <p className="mt-2 text-[10px] text-muted-foreground">Loading activity...</p>
+        <p
+          className={`mt-3 text-muted-foreground ${
+            isDashboard ? 'text-sm' : 'text-[10px]'
+          }`}
+        >
+          Loading activity...
+        </p>
       ) : null}
 
       {isError ? (
-        <p className="mt-2 text-[10px] text-red-500">Failed to load daily activity.</p>
+        <p
+          className={`mt-3 text-red-500 ${
+            isDashboard ? 'text-sm' : 'text-[10px]'
+          }`}
+        >
+          Failed to load daily activity.
+        </p>
       ) : null}
 
       {!isLoading && !isError && data ? (
-        <div className="mt-1 grid grid-cols-7 gap-px">
+        <div
+          className={`mt-3 grid grid-cols-7 ${
+            isDashboard ? 'gap-1.5 sm:gap-2' : 'gap-px'
+          }`}
+        >
           {WEEKDAY_LABELS.map((label) => (
             <div
               key={label}
-              className="text-center text-[8px] font-semibold uppercase tracking-wide text-muted-foreground"
+              className={`text-center font-semibold uppercase tracking-wide text-muted-foreground ${
+                isDashboard ? 'pb-1 text-[10px] sm:text-xs' : 'text-[8px]'
+              }`}
             >
               {label}
             </div>
           ))}
           {calendarCells.map((day, index) => {
             if (!day) {
-              return <div key={`pad-${index}`} className="h-6" />;
+              return (
+                <div
+                  key={`pad-${index}`}
+                  className={isDashboard ? 'aspect-square min-h-10' : 'h-6'}
+                />
+              );
             }
 
             const dayNumber = Number(day.date.split('-')[2]);
@@ -128,7 +179,9 @@ export default function DailyActivityCalendar() {
               <div
                 key={day.date}
                 title={getDayTitle(day)}
-                className={`relative flex h-6 items-center justify-center rounded-sm ${
+                className={`relative flex items-center justify-center rounded-md ${
+                  isDashboard ? 'aspect-square min-h-10 sm:min-h-12' : 'h-6 rounded-sm'
+                } ${
                   indicator === 'fire'
                     ? 'bg-orange-500/10'
                     : indicator === 'dead'
@@ -138,15 +191,30 @@ export default function DailyActivityCalendar() {
               >
                 {indicator ? (
                   <>
-                    <span className="text-sm leading-none" aria-hidden>
+                    <span
+                      className={`leading-none ${
+                        isDashboard ? 'text-lg sm:text-xl' : 'text-sm'
+                      }`}
+                      aria-hidden
+                    >
                       {indicator === 'fire' ? '🔥' : '💀'}
                     </span>
-                    <span className="absolute right-0.5 top-0 text-[7px] font-semibold leading-none text-foreground/75">
+                    <span
+                      className={`absolute font-semibold leading-none text-foreground/75 ${
+                        isDashboard
+                          ? 'right-1 top-1 text-[10px] sm:text-xs'
+                          : 'right-0.5 top-0 text-[7px]'
+                      }`}
+                    >
                       {dayNumber}
                     </span>
                   </>
                 ) : (
-                  <span className="text-[9px] leading-none text-muted-foreground">
+                  <span
+                    className={`leading-none text-muted-foreground ${
+                      isDashboard ? 'text-sm' : 'text-[9px]'
+                    }`}
+                  >
                     {dayNumber}
                   </span>
                 )}
@@ -161,7 +229,14 @@ export default function DailyActivityCalendar() {
 
 function ChevronLeftIcon({ className }: { className?: string }) {
   return (
-    <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={className}
+    >
       <path d="m15 18-6-6 6-6" />
     </svg>
   );
@@ -169,7 +244,14 @@ function ChevronLeftIcon({ className }: { className?: string }) {
 
 function ChevronRightIcon({ className }: { className?: string }) {
   return (
-    <svg aria-hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={className}
+    >
       <path d="m9 18 6-6-6-6" />
     </svg>
   );

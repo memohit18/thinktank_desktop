@@ -13,7 +13,6 @@ import {
   useGetUserProgressQuery,
 } from '@/lib/services/userProgressApi';
 import BulkUploadModal from '@/components/code/BulkUploadModal';
-import DailyActivityCalendar from '@/components/code/DailyActivityCalendar';
 import ProgressOverview from '@/components/code/ProgressOverview';
 import RoadmapModal from '@/components/code/RoadmapModal';
 import DataTable, { type DataTableColumn } from '@/components/ui/DataTable';
@@ -266,7 +265,7 @@ export default function CodingChallengesPage() {
         </div>
       </div>
 
-      <div className="mb-4 grid items-stretch gap-3 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+      <div className="mb-4">
         <ProgressOverview
           totalProblems={data?.total ?? 0}
           solvedCount={completedCount}
@@ -277,7 +276,6 @@ export default function CodingChallengesPage() {
             setPage(1);
           }}
         />
-        <DailyActivityCalendar />
       </div>
 
       {showFilters ? (
