@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1100" viewBox="0 0 1800 1100" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1800" y2="1100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07141c"/>
+      <stop offset="0.55" stop-color="#0d3a40"/>
+      <stop offset="1" stop-color="#145a52"/>
+    </linearGradient>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="rgba(255,255,255,0.12)"/>
+    </pattern>
+  </defs>
+  <rect width="1800" height="1100" fill="url(#bg)"/>
+  <rect width="1800" height="1100" fill="url(#dots)"/>
+  <g opacity="0.35" stroke="#9be7df" stroke-width="2">
+    <path d="M120 220h420v240H120z"/><path d="M160 280h340"/><path d="M160 330h280"/><path d="M160 380h300"/>
+    <path d="M620 180h480v300H620z"/><path d="M670 250h380"/><path d="M670 310h300"/><path d="M670 370h340"/>
+    <path d="M1180 280h480v360h-480z"/><path d="M1240 360h360"/><path d="M1240 430h280"/><path d="M1240 500h320"/>
+  </g>
+  <text x="90" y="980" fill="rgba(255,255,255,0.2)" font-family="Arial" font-size="96" font-weight="700">FULL STACK · DEVOPS</text>
+</svg>

@@ -6,7 +6,11 @@ import AppSidebar from '@/components/layout/AppSidebar';
 import { useSidebar } from '@/providers/SidebarProvider';
 
 function isFixedViewportRoute(pathname: string) {
-  return /^\/code\/[^/]+$/.test(pathname) || pathname.startsWith('/fitness');
+  return (
+    /^\/code\/[^/]+$/.test(pathname) ||
+    pathname.startsWith('/fitness') ||
+    pathname.startsWith('/career')
+  );
 }
 
 export default function ProtectedShell({

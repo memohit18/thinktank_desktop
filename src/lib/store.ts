@@ -14,6 +14,7 @@ import './services/nutritionPreferencesApi';
 import './services/dietApi';
 import './services/mealApi';
 import './services/progressApi';
+import './services/careerApi';
 
 export function makeStore() {
   const store = configureStore({

@@ -34,6 +34,14 @@ export const DEFAULT_PORTAL_SETTINGS: PortalSettings = {
       description: 'AI diet planner, nutrition, workouts, and coaching.',
       visible: true,
     },
+    {
+      id: 'nav-career',
+      moduleId: 'career',
+      label: 'Career',
+      href: '/career',
+      description: 'Career profile, preferences, resumes, and auto-apply.',
+      visible: true,
+    },
   ],
   modules: [
     {
@@ -54,6 +62,13 @@ export const DEFAULT_PORTAL_SETTINGS: PortalSettings = {
       id: 'fitforge',
       name: 'Fitness',
       description: 'Diet planner, nutrition tracking, and AI fitness coaching.',
+      enabled: true,
+      viewMode: 'desktop',
+    },
+    {
+      id: 'career',
+      name: 'Career',
+      description: 'Job profile, preferences, resumes, and auto-apply.',
       enabled: true,
       viewMode: 'desktop',
     },

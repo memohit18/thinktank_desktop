@@ -2,7 +2,14 @@ import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from '@/lib/auth/cookies';
 import { isAccessTokenValid, isRefreshTokenValid } from '@/lib/auth/token';
 import type { NextRequest } from 'next/server';
 
-const protectedRoutes = ['/dashboard', '/code', '/settings', '/fitforge', '/fitness'];
+const protectedRoutes = [
+  '/dashboard',
+  '/code',
+  '/settings',
+  '/fitforge',
+  '/fitness',
+  '/career',
+];
 const authRoutes = ['/', '/signup'];
 
 export function isProtectedRoute(pathname: string) {

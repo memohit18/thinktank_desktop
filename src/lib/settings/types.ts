@@ -1,6 +1,10 @@
 export type ModuleViewMode = 'desktop' | 'mobile';
 
-export type PortalModuleId = 'dashboard' | 'coding-challenges' | 'fitforge';
+export type PortalModuleId =
+  | 'dashboard'
+  | 'coding-challenges'
+  | 'fitforge'
+  | 'career';
 
 export type SidebarNavItemConfig = {
   id: string;

@@ -1,6 +1,10 @@
 import type { SidebarNavItemConfig } from '@/lib/settings/types';
 
-export type NavIconId = 'dashboard' | 'coding-challenges' | 'fitforge';
+export type NavIconId =
+  | 'dashboard'
+  | 'coding-challenges'
+  | 'fitforge'
+  | 'career';
 
 export type AppNavItem = SidebarNavItemConfig & {
   icon: NavIconId;
@@ -34,6 +38,15 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     visible: true,
     icon: 'fitforge',
   },
+  {
+    id: 'nav-career',
+    moduleId: 'career',
+    label: 'Career',
+    href: '/career',
+    description: 'Career profile, preferences, resumes, and auto-apply.',
+    visible: true,
+    icon: 'career',
+  },
 ];
 
 export function isNavItemActive(pathname: string, href: string) {
@@ -48,6 +61,10 @@ export function isNavItemActive(pathname: string, href: string) {
       pathname === '/fitness' ||
       pathname.startsWith('/fitness/')
     );
+  }
+
+  if (href === '/career') {
+    return pathname === '/career' || pathname.startsWith('/career/');
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
