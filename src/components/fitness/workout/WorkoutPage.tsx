@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import FitnessApiErrorState from '@/components/fitness/FitnessApiErrorState';
 import FitnessModuleShell from '@/components/fitness/FitnessModuleShell';
 import DailyScore from '@/components/fitness/execution/DailyScore';
 import HydrationWidget from '@/components/fitness/execution/HydrationWidget';
@@ -36,18 +35,6 @@ export default function WorkoutPage() {
     );
   }
 
-  if (workout.isError && !workout.today) {
-    return (
-      <FitnessModuleShell activeNav="workout">
-        <FitnessApiErrorState
-          title="Could not load workout"
-          message="Today's workout could not be loaded. Retry when your connection is available."
-          onRetry={() => void workout.refetch()}
-        />
-      </FitnessModuleShell>
-    );
-  }
-
   return (
     <FitnessModuleShell activeNav="workout">
       <div className="space-y-6">
@@ -78,14 +65,25 @@ export default function WorkoutPage() {
               Generate an AI workout plan, then start today&apos;s session to
               log sets, reps, and rest.
             </p>
-            <button
-              type="button"
-              disabled={workout.isGenerating}
-              onClick={() => void workout.generate()}
-              className="mt-6 inline-flex items-center justify-center rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground shadow-[0_0_24px_var(--neon-glow)] transition-opacity hover:opacity-90 disabled:opacity-60 dark:text-black"
-            >
-              {workout.isGenerating ? 'Generating…' : 'Generate Workout Plan'}
-            </button>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                disabled={workout.isGenerating}
+                onClick={() => void workout.generate()}
+                className="inline-flex items-center justify-center rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground shadow-[0_0_24px_var(--neon-glow)] transition-opacity hover:opacity-90 disabled:opacity-60 dark:text-black"
+              >
+                {workout.isGenerating ? 'Generating…' : 'Generate Workout Plan'}
+              </button>
+              {workout.isError ? (
+                <button
+                  type="button"
+                  onClick={() => void workout.refetch()}
+                  className="inline-flex items-center justify-center rounded-xl border border-border px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted"
+                >
+                  Retry
+                </button>
+              ) : null}
+            </div>
           </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">

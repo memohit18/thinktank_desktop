@@ -75,9 +75,13 @@ export function useWorkout() {
     hasPlan: Boolean(
       activeQuery.data?.days?.length || today?.exercises?.length,
     ),
-    isLoading: todayQuery.isLoading && activeQuery.isLoading,
+    isLoading:
+      todayQuery.isLoading ||
+      todayQuery.isUninitialized ||
+      activeQuery.isLoading ||
+      activeQuery.isUninitialized,
     isFetching: todayQuery.isFetching || activeQuery.isFetching,
-    isError: todayQuery.isError && activeQuery.isError,
+    isError: todayQuery.isError && activeQuery.isError && !today,
     isGenerating: generateState.isLoading || activateState.isLoading,
     generate,
     refetch: async () => {

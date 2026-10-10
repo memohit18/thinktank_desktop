@@ -1,6 +1,7 @@
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import {
   isFitnessErrorEnvelope,
-  isMissingFitnessProfileStatus,
+  isMissingFitnessProfileError,
 } from '@/lib/fitness/fitnessResponse';
 import {
   unwrapActiveWorkout,
@@ -37,18 +38,28 @@ const workoutQueryOptions = {
   keepUnusedDataFor: RTK_QUERY_FRESH_CACHE.keepUnusedDataFor,
 };
 
+function errorMessage(error: FetchBaseQueryError) {
+  if (typeof error.data === 'string') return error.data;
+  if (error.data && typeof error.data === 'object' && 'message' in error.data) {
+    const message = (error.data as { message?: unknown }).message;
+    return typeof message === 'string' ? message : '';
+  }
+  return '';
+}
+
+/** No plan or no session is an empty workout, not a connection failure. */
+function isAbsentWorkoutError(error: FetchBaseQueryError) {
+  if (isMissingFitnessProfileError(error)) return true;
+  return /not found|no active workout|no workout/i.test(errorMessage(error));
+}
+
 export const workoutApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getTodayWorkout: builder.query<WorkoutDay | null, void>({
       async queryFn(_arg, _queryApi, _extraOptions, baseQuery) {
         const result = await baseQuery(workoutService.today());
         if (result.error) {
-          if (
-            isMissingFitnessProfileStatus(result.error.status) ||
-            result.error.status === 404
-          ) {
-            return { data: null };
-          }
+          if (isAbsentWorkoutError(result.error)) return { data: null };
           return { error: result.error };
         }
         if (isFitnessErrorEnvelope(result.data)) return { data: null };
@@ -61,12 +72,7 @@ export const workoutApi = apiSlice.injectEndpoints({
       async queryFn(_arg, _queryApi, _extraOptions, baseQuery) {
         const result = await baseQuery(workoutService.active());
         if (result.error) {
-          if (
-            isMissingFitnessProfileStatus(result.error.status) ||
-            result.error.status === 404
-          ) {
-            return { data: null };
-          }
+          if (isAbsentWorkoutError(result.error)) return { data: null };
           return { error: result.error };
         }
         if (isFitnessErrorEnvelope(result.data)) return { data: null };
@@ -94,12 +100,7 @@ export const workoutApi = apiSlice.injectEndpoints({
       async queryFn(_arg, _queryApi, _extraOptions, baseQuery) {
         const result = await baseQuery(workoutService.activeSession());
         if (result.error) {
-          if (
-            isMissingFitnessProfileStatus(result.error.status) ||
-            result.error.status === 404
-          ) {
-            return { data: null };
-          }
+          if (isAbsentWorkoutError(result.error)) return { data: null };
           return { error: result.error };
         }
         if (isFitnessErrorEnvelope(result.data)) return { data: null };
