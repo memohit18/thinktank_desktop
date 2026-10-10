@@ -1,0 +1,18 @@
+---
+description: Never read or use env files
+alwaysApply: true
+---
+
+# Never access env files
+
+Do not read, search, open, copy, or parse env files. This includes shell commands, search tools, and scripts that load them.
+
+Covered files:
+
+- `.env`
+- `.env.*` (`.env.local`, `.env.development`, `.env.production`, `.env.example`, and the same names in any directory)
+- Other dotenv files that hold connection strings or secrets
+
+Do not quote their values in commands, replies, logs, or other files. Do not reconstruct a connection string from them.
+
+If a task needs a variable, ask the user for the value or tell them which variable name to set. Use `.env.example` only when the user explicitly asks to edit that example file.

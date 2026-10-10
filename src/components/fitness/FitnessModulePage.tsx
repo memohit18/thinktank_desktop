@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { ArrowRight, Dumbbell, Loader2 } from 'lucide-react';
 import FitnessApiErrorState from '@/components/fitness/FitnessApiErrorState';
+import { isMissingFitnessProfileError } from '@/lib/fitness/fitnessResponse';
 import { hasCompletedFitnessOnboarding } from '@/lib/fitness/profileMapper';
 import { useGetFitnessProfileQuery } from '@/lib/services/fitnessApi';
 
@@ -14,18 +15,20 @@ export default function FitnessModulePage() {
     data: profile,
     isLoading,
     isError,
+    error,
     refetch,
   } = useGetFitnessProfileQuery();
 
+  const profileIsMissing = !profile && isMissingFitnessProfileError(error);
   const profileIsComplete = hasCompletedFitnessOnboarding(profile);
 
   useEffect(() => {
     if (isLoading) return;
 
-    if (!profileIsComplete) {
+    if (!profileIsComplete || profileIsMissing) {
       router.replace('/fitness/setup');
     }
-  }, [isLoading, profileIsComplete, router]);
+  }, [isLoading, profileIsComplete, profileIsMissing, router]);
 
   if (isLoading) {
     return (
@@ -35,7 +38,7 @@ export default function FitnessModulePage() {
     );
   }
 
-  if (isError) {
+  if (isError && !profileIsMissing) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
         <div className="w-full max-w-xl">

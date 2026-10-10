@@ -9,6 +9,7 @@ import type {
 } from '@/lib/fitness/types';
 import {
   isFitnessErrorEnvelope,
+  isMissingFitnessProfileError,
   isMissingFitnessProfileStatus,
   unwrapFitnessData,
   unwrapFitnessPlans,
@@ -33,24 +34,22 @@ async function fetchFitnessProfile(
   baseQuery: (path: string) => Promise<{ data?: unknown; error?: FetchBaseQueryError }>,
 ) {
   let lastError: FetchBaseQueryError | undefined;
-  let sawMissingProfile = false;
 
   for (const path of PROFILE_READ_PATHS) {
     const result = await baseQuery(path);
 
     if (result.error) {
-      if (isMissingFitnessProfileStatus(result.error.status)) {
-        sawMissingProfile = true;
-        continue;
+      if (isMissingFitnessProfileError(result.error)) {
+        return { data: null as FitnessProfile | null };
       }
 
-      return { error: result.error };
+      lastError = result.error;
+      continue;
     }
 
     if (isFitnessErrorEnvelope(result.data)) {
       if (isMissingFitnessProfileStatus(result.data.statusCode)) {
-        sawMissingProfile = true;
-        continue;
+        return { data: null as FitnessProfile | null };
       }
 
       return {
@@ -66,15 +65,13 @@ async function fetchFitnessProfile(
       return { data: profile };
     }
 
-    sawMissingProfile = true;
-  }
-
-  if (sawMissingProfile) {
     return { data: null as FitnessProfile | null };
   }
 
   return {
-    error: lastError ?? ({ status: 404, data: 'Fitness profile not found' } satisfies FetchBaseQueryError),
+    error:
+      lastError ??
+      ({ status: 404, data: 'Fitness profile not found' } satisfies FetchBaseQueryError),
   };
 }
 

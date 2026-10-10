@@ -27,7 +27,46 @@ export function isFitnessErrorEnvelope(
 }
 
 export function isMissingFitnessProfileStatus(status: unknown) {
-  return status === 404;
+  return status === 404 || status === '404';
+}
+
+/** A missing profile is a new user, not a failed request. */
+export function isMissingFitnessProfileError(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const record = error as {
+    status?: unknown;
+    statusCode?: unknown;
+    originalStatus?: unknown;
+    data?: unknown;
+    message?: unknown;
+  };
+
+  if (isFitnessErrorEnvelope(record.data)) {
+    return isMissingFitnessProfileStatus(record.data.statusCode);
+  }
+
+  if (isFitnessErrorEnvelope(record)) {
+    return isMissingFitnessProfileStatus(record.statusCode);
+  }
+
+  if (isMissingFitnessProfileStatus(record.status)) {
+    return true;
+  }
+
+  if (
+    record.status === 'PARSING_ERROR' &&
+    isMissingFitnessProfileStatus(record.originalStatus)
+  ) {
+    return true;
+  }
+
+  return (
+    typeof record.message === 'string' &&
+    record.message.toLowerCase().includes('fitness profile not found')
+  );
 }
 
 export function unwrapFitnessData<T>(response: unknown): T | null {

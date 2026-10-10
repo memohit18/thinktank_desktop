@@ -22,6 +22,7 @@ import WelcomeStep from '@/components/fitness/setup/steps/WelcomeStep';
 import { useToast } from '@/components/ui/Toast';
 import { useFitnessSetup } from '@/hooks/useFitnessSetup';
 import { FITNESS_SETUP_STEPS } from '@/lib/fitness/constants';
+import { isMissingFitnessProfileError } from '@/lib/fitness/fitnessResponse';
 import { getInitialFitnessSetupValues, hasCompletedFitnessOnboarding } from '@/lib/fitness/profileMapper';
 import { toFitnessProfilePayload } from '@/lib/fitness/schemas/fitness.schema';
 import {
@@ -54,9 +55,11 @@ export default function FitnessSetupWizard() {
     isLoading: isProfileLoading,
     isFetching: isProfileFetching,
     isError: isProfileError,
+    error: profileError,
     refetch: refetchProfile,
   } = useGetFitnessProfileQuery();
 
+  const profileIsMissing = isMissingFitnessProfileError(profileError);
   const profileIsComplete = hasCompletedFitnessOnboarding(profile);
 
   const {
@@ -94,7 +97,7 @@ export default function FitnessSetupWizard() {
   useEffect(() => {
     if (isProfileLoading || isProfileFetching || hasHydratedProfile) return;
 
-    if (isProfileError) {
+    if (isProfileError && !profileIsMissing) {
       setHasHydratedProfile(true);
       return;
     }
@@ -133,6 +136,7 @@ export default function FitnessSetupWizard() {
     profileIsComplete,
     router,
     isProfileError,
+    profileIsMissing,
   ]);
 
   async function handleSubmit() {
@@ -223,7 +227,7 @@ export default function FitnessSetupWizard() {
     );
   }
 
-  if (isProfileError) {
+  if (isProfileError && !profileIsMissing) {
     return (
       <FitnessSetupShell
         currentStep={currentStep}

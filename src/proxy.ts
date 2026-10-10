@@ -75,6 +75,8 @@ export const config = {
     '/api/user-progress/:path*',
     '/api/roadmaps/:path*',
     '/api/fitness/:path*',
+    '/api/fitness-profile',
+    '/api/fitness-profile/:path*',
     '/api/career/:path*',
     '/api/transformation/:path*',
     '/api/foods',
