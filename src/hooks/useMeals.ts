@@ -96,7 +96,7 @@ export function useMeals() {
     skip: false,
   });
 
-  const { complete, skip, isCompleting, isSkipping, pendingMealId } =
+  const { complete, skip, undo, isCompleting, isSkipping, isUndoing, pendingMealId } =
     useCompleteMeal();
   const { replace, isReplacing } = useReplaceMeal();
   const [generateMealPlan, generateState] = useGenerateMealPlanFromDietMutation();
@@ -309,6 +309,7 @@ export function useMeals() {
     setReplaceMealId,
     complete,
     skip,
+    undo,
     replace,
     generate: handleGenerate,
     activate: handleActivate,
@@ -316,6 +317,7 @@ export function useMeals() {
     isActivating: activateState.isLoading,
     isCompleting,
     isSkipping,
+    isUndoing,
     isReplacing,
     pendingMealId,
   };

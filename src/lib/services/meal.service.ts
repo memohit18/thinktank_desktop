@@ -52,6 +52,12 @@ export const mealService = {
       method: 'POST' as const,
     };
   },
+  undo(mealItemId: string) {
+    return {
+      url: `/meal-plans/${mealItemId}/undo`,
+      method: 'POST' as const,
+    };
+  },
   replace(
     mealItemId: string,
     body: { foodId: string; quantity?: number },

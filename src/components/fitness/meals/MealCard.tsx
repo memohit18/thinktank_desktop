@@ -1,6 +1,6 @@
 'use client';
 
-import { UtensilsCrossed } from 'lucide-react';
+import { Undo2, UtensilsCrossed } from 'lucide-react';
 import CompleteButton from '@/components/fitness/meals/CompleteButton';
 import SkipButton from '@/components/fitness/meals/SkipButton';
 import { MEAL_TYPE_LABELS } from '@/lib/fitness/meals/constants';
@@ -11,6 +11,7 @@ type MealCardProps = {
   isActing?: boolean;
   onComplete?: (mealId: string) => void;
   onSkip?: (mealId: string) => void;
+  onUndo?: (mealId: string) => void;
   onReplace?: (mealId: string) => void;
 };
 
@@ -41,6 +42,7 @@ export default function MealCard({
   isActing = false,
   onComplete,
   onSkip,
+  onUndo,
   onReplace,
 }: MealCardProps) {
   const isDone =
@@ -61,11 +63,24 @@ export default function MealCard({
             </span>
           ) : null}
         </div>
-        <span
-          className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase ${statusStyles(meal.status)}`}
-        >
-          {meal.status}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase ${statusStyles(meal.status)}`}
+          >
+            {meal.status}
+          </span>
+          {isDone && onUndo ? (
+            <button
+              type="button"
+              disabled={isActing}
+              onClick={() => onUndo(meal.id)}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[10px] font-semibold uppercase text-foreground hover:bg-muted disabled:opacity-50"
+            >
+              <Undo2 className="size-3" />
+              Undo
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 p-4 sm:flex-row">

@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, NotebookPen, Replace, SkipForward, UtensilsCrossed } from 'lucide-react';
+import {
+  Check,
+  NotebookPen,
+  Replace,
+  SkipForward,
+  Undo2,
+  UtensilsCrossed,
+} from 'lucide-react';
 import MealNotesDialog from '@/components/fitness/execution/MealNotesDialog';
 import PortionSelector from '@/components/fitness/execution/PortionSelector';
 import { MEAL_TYPE_LABELS } from '@/lib/fitness/meals/constants';
@@ -17,6 +24,7 @@ type MealExecutionCardProps = {
   ) => void | Promise<boolean>;
   onHalf?: (mealId: string) => void | Promise<boolean>;
   onSkip?: (mealId: string) => void | Promise<boolean>;
+  onUndo?: (mealId: string) => void | Promise<boolean>;
   onReplace?: (mealId: string) => void;
   onCustomFood?: (mealId: string) => void;
 };
@@ -49,6 +57,7 @@ export default function MealExecutionCard({
   onLogPortion,
   onHalf,
   onSkip,
+  onUndo,
   onReplace,
   onCustomFood,
 }: MealExecutionCardProps) {
@@ -76,11 +85,24 @@ export default function MealExecutionCard({
             </span>
           ) : null}
         </div>
-        <span
-          className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase ${statusStyles(meal.status)}`}
-        >
-          {meal.status}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase ${statusStyles(meal.status)}`}
+          >
+            {meal.status}
+          </span>
+          {isDone && onUndo ? (
+            <button
+              type="button"
+              disabled={isActing}
+              onClick={() => void onUndo(meal.id)}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[10px] font-semibold uppercase text-foreground hover:bg-muted disabled:opacity-50"
+            >
+              <Undo2 className="size-3" />
+              Undo
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 p-4 sm:flex-row">

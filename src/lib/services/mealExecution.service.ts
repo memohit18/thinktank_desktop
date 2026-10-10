@@ -27,6 +27,12 @@ export const mealExecutionService = {
       method: 'POST' as const,
     };
   },
+  undo(mealId: string) {
+    return {
+      url: `/meals/${mealId}/undo`,
+      method: 'POST' as const,
+    };
+  },
   replace(mealId: string, foodId: string) {
     return {
       url: `/meals/${mealId}/replace`,

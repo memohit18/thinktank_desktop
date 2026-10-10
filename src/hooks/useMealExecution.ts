@@ -8,6 +8,7 @@ import {
   useExecutePartialMealMutation,
   useExecuteReplaceMealMutation,
   useExecuteSkipMealMutation,
+  useExecuteUndoMealMutation,
 } from '@/lib/services/mealExecutionApi';
 
 export function useMealExecution() {
@@ -16,6 +17,7 @@ export function useMealExecution() {
   const [partialMeal, partialState] = useExecutePartialMealMutation();
   const [skipMeal, skipState] = useExecuteSkipMealMutation();
   const [replaceMeal, replaceState] = useExecuteReplaceMealMutation();
+  const [undoMeal, undoState] = useExecuteUndoMealMutation();
 
   const logPortion = useCallback(
     async (mealId: string, consumedQuantity: number, notes?: string) => {
@@ -71,6 +73,20 @@ export function useMealExecution() {
     [showToast, skipMeal],
   );
 
+  const undo = useCallback(
+    async (mealId: string) => {
+      try {
+        await undoMeal(mealId).unwrap();
+        showToast('Meal log reverted.');
+        return true;
+      } catch (error) {
+        showToast(getApiErrorMessage(error, 'Failed to undo meal.'), 'error');
+        return false;
+      }
+    },
+    [showToast, undoMeal],
+  );
+
   const replace = useCallback(
     async (mealId: string, foodId: string) => {
       try {
@@ -90,6 +106,7 @@ export function useMealExecution() {
     (partialState.originalArgs as PartialArgs | undefined)?.mealId ??
     (skipState.originalArgs as string | undefined) ??
     (replaceState.originalArgs as ReplaceArgs | undefined)?.mealId ??
+    (undoState.originalArgs as string | undefined) ??
     null;
 
   return {
@@ -97,12 +114,14 @@ export function useMealExecution() {
     halfPortion,
     logPortion,
     skip,
+    undo,
     replace,
     isActing:
       completeState.isLoading ||
       partialState.isLoading ||
       skipState.isLoading ||
-      replaceState.isLoading,
+      replaceState.isLoading ||
+      undoState.isLoading,
     isCompleting: completeState.isLoading,
     isPartial: partialState.isLoading,
     isSkipping: skipState.isLoading,

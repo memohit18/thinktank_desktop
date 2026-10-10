@@ -6,12 +6,14 @@ import { getApiErrorMessage } from '@/lib/services/getApiErrorMessage';
 import {
   useCompleteMealItemMutation,
   useSkipMealItemMutation,
+  useUndoMealItemMutation,
 } from '@/lib/services/mealApi';
 
 export function useCompleteMeal() {
   const { showToast } = useToast();
   const [completeMeal, completeState] = useCompleteMealItemMutation();
   const [skipMeal, skipState] = useSkipMealItemMutation();
+  const [undoMeal, undoState] = useUndoMealItemMutation();
 
   const complete = useCallback(
     async (mealItemId: string) => {
@@ -28,6 +30,20 @@ export function useCompleteMeal() {
       }
     },
     [completeMeal, showToast],
+  );
+
+  const undo = useCallback(
+    async (mealItemId: string) => {
+      try {
+        await undoMeal(mealItemId).unwrap();
+        showToast('Meal log reverted.');
+        return true;
+      } catch (error) {
+        showToast(getApiErrorMessage(error, 'Failed to undo meal.'), 'error');
+        return false;
+      }
+    },
+    [showToast, undoMeal],
   );
 
   const skip = useCallback(
@@ -47,11 +63,14 @@ export function useCompleteMeal() {
   return {
     complete,
     skip,
+    undo,
     isCompleting: completeState.isLoading,
     isSkipping: skipState.isLoading,
+    isUndoing: undoState.isLoading,
     pendingMealId:
       (completeState.originalArgs as string | undefined) ??
       (skipState.originalArgs as string | undefined) ??
+      (undoState.originalArgs as string | undefined) ??
       null,
   };
 }

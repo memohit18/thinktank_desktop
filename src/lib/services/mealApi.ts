@@ -201,6 +201,52 @@ export const mealApi = apiSlice.injectEndpoints({
       },
       invalidatesTags: invalidateTagsOnSuccess(['MealPlan']),
     }),
+    undoMealItem: builder.mutation<TodayMeals | null, string>({
+      query: (mealItemId) => mealService.undo(mealItemId),
+      transformResponse: (response: unknown) => unwrapTodayMeals(response),
+      async onQueryStarted(mealItemId, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          mealApi.util.updateQueryData('getTodayMeals', undefined, (draft) => {
+            if (!draft) return;
+            const meal = draft.meals.find((item) => item.id === mealItemId);
+            if (meal) meal.status = 'pending';
+            const mealsCompleted = draft.meals.filter(
+              (item) => item.status === 'completed',
+            ).length;
+            const mealsSkipped = draft.meals.filter(
+              (item) => item.status === 'skipped',
+            ).length;
+            const mealsAssigned =
+              draft.nutrition?.mealsAssigned ?? draft.meals.length;
+            const mealsRemaining = Math.max(
+              0,
+              mealsAssigned - mealsCompleted - mealsSkipped,
+            );
+            draft.mealsRemaining = mealsRemaining;
+            if (draft.nutrition) {
+              draft.nutrition.mealsCompleted = mealsCompleted;
+              draft.nutrition.mealsSkipped = mealsSkipped;
+              draft.nutrition.mealsRemaining = mealsRemaining;
+            }
+          }),
+        );
+        try {
+          const { data } = await queryFulfilled;
+          if (data) {
+            dispatch(
+              mealApi.util.updateQueryData(
+                'getTodayMeals',
+                undefined,
+                () => data,
+              ),
+            );
+          }
+        } catch {
+          patch.undo();
+        }
+      },
+      invalidatesTags: invalidateTagsOnSuccess(['MealPlan', 'Checkin', 'Dashboard']),
+    }),
     skipMealItem: builder.mutation<TodayMeals | null, string>({
       query: (mealItemId) => mealService.skip(mealItemId),
       transformResponse: (response: unknown) => unwrapTodayMeals(response),
@@ -292,6 +338,7 @@ export const {
   useGenerateMealPlanFromDietMutation,
   useActivateMealPlanByIdMutation,
   useCompleteMealItemMutation,
+  useUndoMealItemMutation,
   useSkipMealItemMutation,
   useReplaceMealItemMutation,
 } = mealApi;

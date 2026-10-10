@@ -103,6 +103,46 @@ export const mealExecutionApi = apiSlice.injectEndpoints({
         'Diet',
       ]),
     }),
+    executeUndoMeal: builder.mutation<TodayMeals | null, string>({
+      query: (mealId) => mealExecutionService.undo(mealId),
+      transformResponse: (response: unknown) => unwrapTodayMeals(response),
+      async onQueryStarted(mealId, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          mealApi.util.updateQueryData('getTodayMeals', undefined, (draft) => {
+            if (!draft) return;
+            const meal = draft.meals.find((item) => item.id === mealId);
+            if (!meal) return;
+            meal.status = 'pending';
+            draft.mealsRemaining = draft.meals.filter(
+              (item) =>
+                item.status !== 'completed' &&
+                item.status !== 'skipped' &&
+                item.status !== 'partial',
+            ).length;
+          }),
+        );
+        try {
+          const { data } = await queryFulfilled;
+          if (data) {
+            dispatch(
+              mealApi.util.updateQueryData(
+                'getTodayMeals',
+                undefined,
+                () => data,
+              ),
+            );
+          }
+        } catch {
+          patch.undo();
+        }
+      },
+      invalidatesTags: invalidateTagsOnSuccess([
+        'MealPlan',
+        'Checkin',
+        'Dashboard',
+        'Diet',
+      ]),
+    }),
     executeSkipMeal: builder.mutation<TodayMeals | null, string>({
       query: (mealId) => mealExecutionService.skip(mealId),
       transformResponse: (response: unknown) => unwrapTodayMeals(response),
@@ -159,6 +199,7 @@ export const mealExecutionApi = apiSlice.injectEndpoints({
 export const {
   useExecuteCompleteMealMutation,
   useExecutePartialMealMutation,
+  useExecuteUndoMealMutation,
   useExecuteSkipMealMutation,
   useExecuteReplaceMealMutation,
 } = mealExecutionApi;

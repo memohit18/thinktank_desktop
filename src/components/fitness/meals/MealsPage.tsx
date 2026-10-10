@@ -228,7 +228,7 @@ export default function MealsPage() {
                     Today&apos;s Meals
                   </h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Log ate, half portion, skip, replace, or add a note.
+                    Log ate, half portion, skip, replace, or add a note. Undo if you tapped the wrong one.
                   </p>
                 </div>
                 <MealTabs
@@ -266,6 +266,12 @@ export default function MealsPage() {
                       }
                       onSkip={(id) =>
                         execution.skip(id).then((ok) => {
+                          if (ok) void checkin.refresh();
+                          return ok;
+                        })
+                      }
+                      onUndo={(id) =>
+                        execution.undo(id).then((ok) => {
                           if (ok) void checkin.refresh();
                           return ok;
                         })
