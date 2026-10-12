@@ -87,6 +87,9 @@ type ProfileFormState = {
   nationalNumber: string;
   avatar: string | null;
   avatarImageId: string | null;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 };
 
 function formPhone(form: Pick<ProfileFormState, 'countryCode' | 'nationalNumber'>) {
@@ -131,25 +134,37 @@ export default function ProfileSettingsSection() {
     nationalNumber: sourcePhoneParts.nationalNumber,
     avatar: sourceProfile.avatar,
     avatarImageId: null,
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
 
   useEffect(() => {
     const parts = splitPhone(sourceProfile.phone);
-    setForm({
+    setForm((current) => ({
+      ...current,
       name: sourceProfile.name,
       email: sourceProfile.email,
       countryCode: parts.countryCode,
       nationalNumber: parts.nationalNumber,
       avatar: sourceProfile.avatar,
       avatarImageId: null,
-    });
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    }));
   }, [sourceProfile]);
 
   const composedPhone = formPhone(form);
-  const isDirty =
+  const profileDirty =
     form.name !== sourceProfile.name ||
     composedPhone !== (sourceProfile.phone || '') ||
     form.avatar !== sourceProfile.avatar;
+  const passwordDirty =
+    Boolean(form.currentPassword) ||
+    Boolean(form.newPassword) ||
+    Boolean(form.confirmPassword);
+  const isDirty = profileDirty || passwordDirty;
 
   function resetFormFromSource() {
     const parts = splitPhone(sourceProfile.phone);
@@ -160,6 +175,9 @@ export default function ProfileSettingsSection() {
       nationalNumber: parts.nationalNumber,
       avatar: sourceProfile.avatar,
       avatarImageId: null,
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
     });
   }
 
@@ -177,27 +195,66 @@ export default function ProfileSettingsSection() {
     const trimmedName = form.name.trim();
     const phone = formPhone(form);
 
-    if (!trimmedName) {
+    if (profileDirty && !trimmedName) {
       showToast('Name is required.', 'error');
       return;
     }
 
+    if (passwordDirty) {
+      if (!form.currentPassword || !form.newPassword) {
+        showToast('Enter current and new password to change it.', 'error');
+        return;
+      }
+      if (form.newPassword.length < 8) {
+        showToast('New password must be at least 8 characters.', 'error');
+        return;
+      }
+      if (form.newPassword !== form.confirmPassword) {
+        showToast('New password and confirmation do not match.', 'error');
+        return;
+      }
+    }
+
     await runExclusive(async () => {
       try {
-        await updateProfile({
-          name: trimmedName,
-          phone: phone || null,
-          imageUrl: form.avatar,
-        }).unwrap();
+        const payload: {
+          name?: string;
+          phone?: string | null;
+          avatar?: string | null;
+          currentPassword?: string;
+          newPassword?: string;
+        } = {};
+
+        if (profileDirty) {
+          payload.name = trimmedName;
+          payload.phone = phone || null;
+          payload.avatar = form.avatar;
+        }
+        if (passwordDirty) {
+          payload.currentPassword = form.currentPassword;
+          payload.newPassword = form.newPassword;
+        }
+
+        const updated = await updateProfile(payload).unwrap();
 
         updateUserProfile({
-          name: trimmedName,
-          phone,
-          avatar: form.avatar,
+          name: updated.name || trimmedName,
+          phone: updated.phone ?? phone,
+          avatar: updated.avatar ?? form.avatar,
         });
-        showToast('Profile updated successfully.');
+        showToast(
+          passwordDirty && !profileDirty
+            ? 'Password updated successfully.'
+            : 'Profile updated successfully.',
+        );
         setIsEditing(false);
         setPickerOpen(false);
+        setForm((current) => ({
+          ...current,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        }));
       } catch (error) {
         showToast(
           getApiErrorMessage(error, 'Failed to update profile.'),
@@ -212,8 +269,8 @@ export default function ProfileSettingsSection() {
       <div>
         <h2 className="text-lg font-semibold text-foreground">Your profile</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          View your account details. Click edit to update your photo, name, or
-          phone.
+          View your account details. Click edit to update your photo, name,
+          phone, or password.
         </p>
       </div>
 
@@ -360,6 +417,70 @@ export default function ProfileSettingsSection() {
               />
             )}
           </Field>
+
+          {isEditing ? (
+            <div className="space-y-4 rounded-xl border border-border bg-muted/10 p-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Change password
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Leave blank to keep your current password. Uses the same
+                  PATCH /profile endpoint.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Field label="Current password" htmlFor="profile-current-password">
+                  <input
+                    id="profile-current-password"
+                    type="password"
+                    autoComplete="current-password"
+                    disabled={saveBusy}
+                    value={form.currentPassword}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        currentPassword: event.target.value,
+                      }))
+                    }
+                    className={inputClassName}
+                  />
+                </Field>
+                <Field label="New password" htmlFor="profile-new-password">
+                  <input
+                    id="profile-new-password"
+                    type="password"
+                    autoComplete="new-password"
+                    disabled={saveBusy}
+                    value={form.newPassword}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        newPassword: event.target.value,
+                      }))
+                    }
+                    className={inputClassName}
+                  />
+                </Field>
+                <Field label="Confirm new password" htmlFor="profile-confirm-password">
+                  <input
+                    id="profile-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    disabled={saveBusy}
+                    value={form.confirmPassword}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        confirmPassword: event.target.value,
+                      }))
+                    }
+                    className={inputClassName}
+                  />
+                </Field>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {isEditing ? (

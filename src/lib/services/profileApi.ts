@@ -9,10 +9,13 @@ export type UserProfile = {
   role: string;
 };
 
+/** PATCH /profile — name/avatar, password, or both. */
 export type UpdateProfilePayload = {
-  name: string;
-  phone: string | null;
-  imageUrl?: string | null;
+  name?: string;
+  avatar?: string | null;
+  phone?: string | null;
+  currentPassword?: string;
+  newPassword?: string;
 };
 
 type ProfileApiRecord = {
@@ -23,6 +26,7 @@ type ProfileApiRecord = {
   avatar?: unknown;
   imageUrl?: unknown;
   image_url?: unknown;
+  data?: unknown;
 };
 
 function asRecord(value: unknown): ProfileApiRecord | null {
@@ -40,7 +44,7 @@ function unwrapEnvelopeData(response: unknown) {
   if (!record) return response;
 
   if ('data' in record && record.data != null) {
-    return (record as { data: unknown }).data;
+    return record.data;
   }
 
   return response;
@@ -54,11 +58,23 @@ export function normalizeUserProfile(response: unknown): UserProfile {
     email: readString(data.email) ?? '',
     phone: readString(data.phone),
     avatar:
+      readString(data.avatar) ??
       readString(data.imageUrl) ??
-      readString(data.image_url) ??
-      readString(data.avatar),
+      readString(data.image_url),
     role: readString(data.role) ?? 'user',
   };
+}
+
+function toProfilePatchBody(payload: UpdateProfilePayload) {
+  const body: Record<string, unknown> = {};
+
+  if (payload.name !== undefined) body.name = payload.name;
+  if (payload.avatar !== undefined) body.avatar = payload.avatar;
+  if (payload.phone !== undefined) body.phone = payload.phone;
+  if (payload.currentPassword) body.currentPassword = payload.currentPassword;
+  if (payload.newPassword) body.newPassword = payload.newPassword;
+
+  return body;
 }
 
 export const profileApi = apiSlice.injectEndpoints({
@@ -70,13 +86,13 @@ export const profileApi = apiSlice.injectEndpoints({
       keepUnusedDataFor: RTK_QUERY_STABLE_CACHE.keepUnusedDataFor,
     }),
     updateProfile: builder.mutation<UserProfile, UpdateProfilePayload>({
-      query: (body) => ({
+      query: (payload) => ({
         url: '/profile',
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body,
+        body: toProfilePatchBody(payload),
       }),
       transformResponse: (response: unknown) => normalizeUserProfile(response),
       invalidatesTags: invalidateTagsOnSuccess(['Profile']),
